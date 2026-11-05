@@ -1,0 +1,2531 @@
+"use client";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  Check,
+  Menu,
+  X,
+  Plus,
+  Download,
+  Flower2,
+  CalendarDays,
+  LayoutDashboard,
+  Inbox,
+  FileText,
+  Users,
+  SlidersHorizontal,
+  BarChart3,
+  Settings,
+} from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  Config,
+  Data,
+  Quote,
+  Item,
+  initial,
+  example,
+  occasions,
+  styles,
+  estimate,
+  totals,
+  money,
+  seed,
+  submit,
+  uid,
+  createQuote,
+  confirmBooking,
+  configSchema,
+} from "@/lib/model";
+import { exportPDF } from "@/lib/pdf";
+import VideoHero from "./video-hero";
+import {
+  officialPackages,
+  roomExtras,
+  productURL,
+  packageGroup,
+} from "@/lib/catalogue";
+const KEY = "kpm-studio-v1";
+const image = (i: number) => "/images/editorial-" + (i % 6) + ".jpg";
+const themeImage = (style: string) =>
+  image([1, 2, 0, 5, 3, 4][Math.max(0, styles.indexOf(style))]);
+const categories = [
+  "Romantic Proposals",
+  "Room Setups",
+  "Roses",
+  "Balloon Garland & Arch",
+  "Heart & I Love You Boxes",
+];
+const slugs = [
+  "romantic-proposals",
+  "room-setups",
+  "floral-arrangements",
+  "balloon-styling",
+  "heart-boxes",
+];
+const descriptions = [
+  "Proposal 1 & Proposal 2. A setting for your next chapter.",
+  "Three room-setup packages, with balloons and thoughtful personal touches.",
+  "Red, white and colour roses. A gesture that says everything.",
+  "Balloon garlands and 3m arches, styled for your celebration.",
+  "Heart Box and I Love You Box gifts. Beautiful little declarations.",
+];
+const occasionDescriptions = [
+  "A setting for your next chapter.",
+  "Balloons, banners and room décor.",
+  "A room setup for your birthday.",
+  "Red, white or colour roses.",
+  "A personal brief or thoughtful gift.",
+];
+const collectionOccasion = (i: number) =>
+  [occasions[0], occasions[1], occasions[3], occasions[4], occasions[4]][i];
+const collectionImage = (i: number) =>
+  i === 3 ? "/images/balloon-styling.jpg" : image([0, 3, 1, 4, 2][i]);
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+function Modal({
+  title,
+  children,
+  close,
+}: {
+  title: string;
+  children: ReactNode;
+  close: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement;
+    ref.current?.showModal();
+    return () => prev?.focus();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      onCancel={close}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
+      aria-label={title}
+    >
+      <div className="modal-head">
+        <h2>{title}</h2>
+        <button onClick={close} aria-label="Close dialog">
+          <X size={20} />
+        </button>
+      </div>
+      {children}
+    </dialog>
+  );
+}
+export default function Experience() {
+  const path = usePathname(),
+    router = useRouter();
+  const [data, setData] = useState<Data | null>(null),
+    [config, setConfig] = useState<Config>(initial),
+    [notice, setNotice] = useState(""),
+    [menu, setMenu] = useState(false),
+    [tour, setTour] = useState(false),
+    [reset, setReset] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(KEY);
+      setData(raw ? JSON.parse(raw) : seed());
+      const draft = localStorage.getItem(KEY + "-draft");
+      if (draft) setConfig({ ...initial, ...JSON.parse(draft) });
+    } catch {
+      setData(seed());
+      setNotice(
+        "Stored demo could not be read. A fresh sample has been loaded.",
+      );
+    }
+    const sync = (e: StorageEvent) => {
+      if (e.key === KEY && e.newValue) {
+        try {
+          setData(JSON.parse(e.newValue));
+        } catch {
+          setNotice("Unable to read another tab's changes.");
+        }
+      }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  const updateConfig = (patch: Partial<Config>) => {
+    const next = { ...config, ...patch };
+    setConfig(next);
+    try {
+      localStorage.setItem(KEY + "-draft", JSON.stringify(next));
+    } catch {
+      setNotice("Draft could not be saved. Browser storage is unavailable.");
+    }
+  };
+  const mutate = (fn: (d: Data) => void, message: string) => {
+    if (!data) return false;
+    try {
+      const stored = localStorage.getItem(KEY);
+      const next: Data = structuredClone(stored ? JSON.parse(stored) : data);
+      fn(next);
+      next.revision++;
+      next.activity.unshift({
+        id: uid("ACT"),
+        text: message,
+        at: new Date().toISOString(),
+      });
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setData(next);
+      setNotice(message);
+      return true;
+    } catch (e) {
+      setNotice(
+        e instanceof Error ? e.message : "Could not save. Please retry.",
+      );
+      return false;
+    }
+  };
+  const load = () => {
+    updateConfig(example);
+    setNotice("Fictional example loaded. Your draft is saved in this browser.");
+    router.push("/studio");
+  };
+  const admin = path.startsWith("/admin");
+  useEffect(() => {
+    setMenu(false);
+  }, [path]);
+  if (!data)
+    return (
+      <main className="loading">
+        <Flower2 />
+        <p>Opening the studio…</p>
+      </main>
+    );
+  const nav = (
+    <>
+      <Link href="/collections">Collections</Link>
+      <Link href="/gallery">Our inspiration</Link>
+      <Link href="/studio">The Event Studio</Link>
+    </>
+  );
+  return (
+    <>
+      <a className="skip" href="#main">
+        Skip to content
+      </a>
+      {admin ? (
+        <div className="manager">
+          <aside className="sidebar">
+            <Link className="brand" href="/">
+              KPM<span>OPULENCE</span>
+            </Link>
+            <p className="eyebrow">STUDIO MANAGER</p>
+            {[
+              ["", "Overview", LayoutDashboard],
+              ["enquiries", "Enquiries", Inbox],
+              ["quotations", "Quotations", FileText],
+              ["bookings", "Bookings", Flower2],
+              ["calendar", "Calendar", CalendarDays],
+              ["clients", "Clients", Users],
+              ["packages", "Packages", SlidersHorizontal],
+              ["analytics", "Analytics", BarChart3],
+              ["settings", "Settings", Settings],
+            ].map(([url, label, Icon]) => {
+              const I = Icon as typeof Menu;
+              return (
+                <Link
+                  key={String(url)}
+                  className={
+                    path === "/admin" + (url ? "/" + url : "") ? "active" : ""
+                  }
+                  href={"/admin" + (url ? "/" + url : "")}
+                >
+                  <I size={17} />
+                  {String(label)}
+                </Link>
+              );
+            })}
+            <div className="sidebar-bottom">
+              <Link href="/">← Public experience</Link>
+              <small>
+                Sample-only workspace
+                <br />
+                Stored in this browser
+              </small>
+            </div>
+          </aside>
+          <div className="manager-main">
+            <header className="manager-top">
+              <span>
+                THE EVENT STUDIO <span className="muted">/ Management</span>
+              </span>
+              <span className="badge">DEMO WORKSPACE</span>
+            </header>
+            <main id="main">
+              <Admin
+                path={path}
+                data={data}
+                mutate={mutate}
+                reset={() => setReset(true)}
+              />
+            </main>
+          </div>
+        </div>
+      ) : (
+        <>
+          <header className={"site-nav" + (path === "/" ? " cinema-nav" : "")}>
+            <Link className="brand" href="/">
+              KPM<span>OPULENCE</span>
+            </Link>
+            <nav aria-label="Main navigation">{nav}</nav>
+            <Link className="nav-cta" href="/studio">
+              Design your experience <ArrowUpRight size={16} />
+            </Link>
+            <button
+              className="mobile-toggle"
+              aria-label="Toggle navigation"
+              aria-expanded={menu}
+              onClick={() => setMenu(!menu)}
+            >
+              {menu ? <X /> : <Menu />}
+            </button>
+          </header>
+          {menu && (
+            <nav
+              className={
+                "mobile-nav" + (path === "/" ? " cinema-mobile-nav" : "")
+              }
+            >
+              {nav}
+              <Link href="/admin">Studio Manager</Link>
+            </nav>
+          )}
+          <main id="main">
+            {path === "/" ? (
+              <Home />
+            ) : path.startsWith("/collections") ? (
+              <Collections path={path} data={data} configure={updateConfig} />
+            ) : path === "/gallery" ? (
+              <Gallery />
+            ) : path.startsWith("/studio") ? (
+              <Studio
+                config={config}
+                update={updateConfig}
+                data={data}
+                load={load}
+                mutate={mutate}
+              />
+            ) : path.startsWith("/enquiry/success/") ? (
+              <Success id={path.split("/").pop()!} data={data} />
+            ) : (
+              <section className="page-title">
+                <h1>A little off the beaten path.</h1>
+                <Link className="button" href="/">
+                  Return home
+                </Link>
+              </section>
+            )}
+          </main>
+          <footer>
+            <div className="footer-title">
+              Beautifully considered.
+              <br />
+              <em>Unforgettably yours.</em>
+            </div>
+            <div className="footer-row">
+              <Link className="brand" href="/">
+                KPM<span>OPULENCE</span>
+              </Link>
+              {nav}
+              <Link href="/admin">Studio Manager ↗</Link>
+            </div>
+            <div className="fineprint">
+              <span>
+                Illustrative concept. Not the official booking website.
+              </span>
+              <span>
+                Interactive concept by <a href="https://paceit.co.za">paceIT</a>{" "}
+                · Design inspiration: <a href="https://8b.com">8B</a>
+              </span>
+            </div>
+          </footer>
+        </>
+      )}
+      {!tour ? (
+        <button className="tour-launch" onClick={() => setTour(true)}>
+          Explore the Experience <ArrowUpRight size={16} />
+        </button>
+      ) : (
+        <div className="tour">
+          <span className="eyebrow">
+            A MOMENT, FROM IDEA TO CONFIRMED EVENT
+          </span>
+          <p>Design → Enquire → Quote → Accept → Book → Calendar</p>
+          <div>
+            <button onClick={load}>Load Example</button>
+            <button
+              onClick={() =>
+                router.push(
+                  path === "/"
+                    ? "/studio"
+                    : path.startsWith("/studio")
+                      ? "/admin/enquiries"
+                      : path.startsWith("/admin/enquiries")
+                        ? "/admin/quotations"
+                        : "/admin/calendar",
+                )
+              }
+            >
+              Next Demo Step <ArrowRight size={14} />
+            </button>
+            <button onClick={() => setReset(true)}>Reset Demo</button>
+            <button onClick={() => setTour(false)}>Exit Walkthrough</button>
+          </div>
+          <small>
+            Submit the example, then open its enquiry to create your quotation.
+          </small>
+        </div>
+      )}
+      <div role="status" aria-live="polite" className={notice ? "toast" : ""}>
+        {notice && (
+          <>
+            <span>{notice}</span>
+            <button
+              aria-label="Dismiss notification"
+              onClick={() => setNotice("")}
+            >
+              <X size={16} />
+            </button>
+          </>
+        )}
+      </div>
+      {reset && (
+        <Modal title="Reset this demo?" close={() => setReset(false)}>
+          <p>
+            This removes this browser’s enquiries, quotations, bookings and
+            saved draft, and restores fictional sample data.
+          </p>
+          <div className="actions">
+            <button onClick={() => setReset(false)}>Keep my progress</button>
+            <button
+              className="button"
+              onClick={() => {
+                try {
+                  const fresh = seed();
+                  localStorage.setItem(KEY, JSON.stringify(fresh));
+                  localStorage.removeItem(KEY + "-draft");
+                  setData(fresh);
+                  setConfig(initial);
+                  setReset(false);
+                  setNotice("Demo reset to fictional sample data.");
+                  router.push("/");
+                } catch {
+                  setNotice("Storage unavailable. Reset could not be saved.");
+                }
+              }}
+            >
+              Reset Demo
+            </button>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
+function Home() {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) =>
+          gsap.from(el, {
+            y: 35,
+            opacity: 0,
+            duration: 0.9,
+            scrollTrigger: { trigger: el, start: "top 90%" },
+          }),
+        );
+        gsap.from(".intro", {
+          borderRadius: "50% 50% 0 0",
+          scrollTrigger: {
+            trigger: ".intro",
+            start: "top bottom",
+            end: "top 30%",
+            scrub: 1,
+          },
+        });
+        gsap.utils
+          .toArray<HTMLElement>(".collection-card-reveal")
+          .forEach((el, i) => {
+            gsap.from(el, {
+              y: 65,
+              autoAlpha: 0,
+              scale: 0.92,
+              rotation: i % 2 ? 2 : -2,
+              duration: 0.8,
+              delay: (i % 5) * 0.07,
+              ease: "back.out(1.3)",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 92%",
+                toggleActions: "play none none reverse",
+              },
+            });
+          });
+        gsap.from(".photo-stack .gallery-card", {
+          x: (i) => (1 - i) * 160,
+          y: (i) => Math.abs(i - 1) * 70,
+          rotation: (i) => (i - 1) * 9,
+          scale: 0.85,
+          scrollTrigger: {
+            trigger: ".photo-stack",
+            start: "top 90%",
+            end: "top 20%",
+            scrub: 1,
+          },
+        });
+      });
+    }, root);
+    return () => ctx.revert();
+  }, []);
+  return (
+    <div ref={root}>
+      <VideoHero />
+      <section id="introduction" className="intro section">
+        <div className="eyebrow">THE ART OF A BEAUTIFUL MOMENT</div>
+        <div className="intro-layout">
+          <h2 className="reveal">
+            Some moments
+            <br />
+            deserve something
+            <br />
+            <em>extraordinary.</em>
+          </h2>
+          <div>
+            <img
+              src={image(2)}
+              alt="Delicate white and pink blooms in an editorial floral arrangement"
+              loading="lazy"
+            />
+            <p>
+              A thoughtful detail can change everything. The flowers. The light.
+              The way a room feels when you walk in.
+            </p>
+            <p>
+              Explore a world of considered celebrations, then tell us what
+              yours could look like.
+            </p>
+            <Link className="text-link" href="/collections">
+              Discover the collections <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="section collection-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">A WORLD OF POSSIBILITIES</p>
+            <h2 className="reveal">
+              Made for <em>your moment.</em>
+            </h2>
+          </div>
+          <span className="muted">01 — 05 / THE COLLECTIONS</span>
+        </div>
+        <div className="collection-cards">
+          {categories.map((c, i) => (
+            <article className="collection-card-reveal" key={c}>
+              <Link
+                className="collection-card"
+                href={"/collections/" + slugs[i]}
+                onPointerMove={(e) => {
+                  if (e.pointerType === "touch") return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty(
+                    "--hover-x",
+                    ((e.clientX - rect.left) / rect.width - 0.5) * 12 + "px",
+                  );
+                }}
+                onPointerLeave={(e) =>
+                  e.currentTarget.style.setProperty("--hover-x", "0px")
+                }
+              >
+                <div className="collection-card-photo">
+                  <img
+                    src={collectionImage(i)}
+                    alt={c + " illustrative inspiration"}
+                    loading="lazy"
+                  />
+                  <span className="collection-number">0{i + 1}</span>
+                  <span className="collection-card-arrow">
+                    <ArrowUpRight size={18} />
+                  </span>
+                </div>
+                <div className="collection-card-copy">
+                  <h3>{c}</h3>
+                  <p>{descriptions[i]}</p>
+                  <span className="collection-card-link">
+                    Explore collection <ArrowRight size={13} />
+                  </span>
+                </div>
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="studio-feature section">
+        <img
+          src={image(1)}
+          alt="Blush rose bouquets arranged along a wooden table"
+          loading="lazy"
+        />
+        <div className="reveal">
+          <p className="eyebrow">INTRODUCING THE EVENT STUDIO</p>
+          <h2>
+            Make it
+            <br />
+            <em>yours.</em>
+          </h2>
+          <p>
+            Your favourite flowers. Your kind of colour. Your own unforgettable
+            occasion. Bring the details together in an interactive styling
+            moodboard.
+          </p>
+          <div className="chips">
+            <span>Florals</span>
+            <span>Candlelight</span>
+            <span>Your date</span>
+          </div>
+          <Link className="button" href="/studio">
+            Start Designing <ArrowUpRight size={16} />
+          </Link>
+          <small>
+            Illustrative styling concepts. Every final detail is confirmed with
+            you.
+          </small>
+        </div>
+      </section>
+      <section className="section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">THE INSPIRATION EDIT</p>
+            <h2>
+              A feeling, <em>in frames.</em>
+            </h2>
+          </div>
+          <Link className="text-link" href="/gallery">
+            Explore the gallery ↗
+          </Link>
+        </div>
+        <Gallery compact />
+      </section>
+      <section className="closing section">
+        <p className="eyebrow">EVERY DETAIL TELLS A STORY</p>
+        <h2>
+          Let’s create something
+          <br />
+          <em>unforgettable.</em>
+        </h2>
+        <Link className="button" href="/studio">
+          Begin Your Experience <ArrowUpRight size={17} />
+        </Link>
+      </section>
+    </div>
+  );
+}
+function Collections({
+  path,
+  data,
+  configure,
+}: {
+  path: string;
+  data: Data;
+  configure: (c: Partial<Config>) => void;
+}) {
+  const slug = path.split("/")[2];
+  const index = slug === "bespoke-celebrations" ? 4 : slugs.indexOf(slug);
+  if (slug && index < 0)
+    return (
+      <section className="page-title">
+        <h1>Collection not found.</h1>
+        <Link href="/collections">Explore collections</Link>
+      </section>
+    );
+  return (
+    <>
+      <section className="page-title">
+        <p className="eyebrow">
+          THE COLLECTIONS / ILLUSTRATIVE STYLING DIRECTIONS
+        </p>
+        <h1>
+          {index >= 0 ? (
+            categories[index]
+          ) : (
+            <>
+              Every occasion.
+              <br />
+              <em>Beautiful possibilities.</em>
+            </>
+          )}
+        </h1>
+        <p>
+          {index >= 0
+            ? descriptions[index]
+            : "Find your starting point. We’ll make the details yours."}
+        </p>
+      </section>
+      {(index >= 0 ? [index] : [0, 1, 2, 3, 4]).map((i) => (
+        <section className="collection-detail section" key={i}>
+          <img
+            src={collectionImage(i)}
+            alt={categories[i] + " inspiration"}
+            loading="lazy"
+          />
+          <div>
+            <p className="eyebrow">0{i + 1} / CURATED POSSIBILITIES</p>
+            <h2>{categories[i]}</h2>
+            <p>{descriptions[i]}</p>
+            <div className="official-packages">
+              <p className="eyebrow">FROM THE KPM OPULENCE CATALOGUE</p>
+              {officialPackages
+                .filter((p) => p.group === i)
+                .map((p) => (
+                  <details key={p.name}>
+                    <summary>
+                      {p.name}
+                      <Plus size={14} />
+                    </summary>
+                    {p.includes.length > 0 ? (
+                      <ul>
+                        {p.includes.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>
+                        Contact KPM to confirm the arrangement and inclusions.
+                      </p>
+                    )}
+                    <a
+                      className="text-link"
+                      href={productURL(p)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View on KPM’s website ↗
+                    </a>
+                    <Link
+                      className="text-link"
+                      href="/studio"
+                      onClick={() =>
+                        configure({
+                          occasion: collectionOccasion(i),
+                          officialPackage: p.name,
+                          extras: [],
+                        })
+                      }
+                    >
+                      Use as my starting point ↗
+                    </Link>
+                  </details>
+                ))}
+              {i === 1 && (
+                <p className="note">
+                  Room setup extras: {roomExtras.join(" · ")}. Quoted
+                  separately.
+                </p>
+              )}
+            </div>
+            <p className="price">
+              Illustrative base{" "}
+              {money(
+                data.packages.find((p) => p.name === collectionOccasion(i))
+                  ?.price ?? 0,
+              )}
+            </p>
+            <small>
+              Not official pricing. Delivery and custom installations are
+              quote-only. Subject to availability.
+            </small>
+            <Link
+              className="button"
+              href="/studio"
+              onClick={() =>
+                configure({
+                  occasion: collectionOccasion(i),
+                  officialPackage:
+                    officialPackages.find((p) => p.group === i)?.name || "",
+                })
+              }
+            >
+              Personalise this experience <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+function Gallery({ compact = false }: { compact?: boolean }) {
+  const [filter, setFilter] = useState("All"),
+    [open, setOpen] = useState<number | null>(null);
+  const titles = [
+    "A garden kind of romance",
+    "Blush, in full bloom",
+    "The quiet beauty of ivory",
+    "Flowers by candlelight",
+    "An overhead floral dream",
+    "A little everyday sunshine",
+  ];
+  const indices = (compact ? [0, 1, 2] : [0, 1, 2, 3, 4, 5]).filter(
+    (i) =>
+      filter === "All" || (filter === "Florals" ? i !== 0 : i === 0 || i === 3),
+  );
+  return (
+    <>
+      {!compact && (
+        <section className="page-title">
+          <p className="eyebrow">
+            ILLUSTRATIVE INSPIRATION / NOT KPM PROJECT PHOTOGRAPHY
+          </p>
+          <h1>
+            A feeling,
+            <br />
+            <em>in frames.</em>
+          </h1>
+          <div className="filters">
+            {["All", "Florals", "Celebrations"].map((f) => (
+              <button
+                aria-pressed={filter === f}
+                className={filter === f ? "active" : ""}
+                onClick={() => setFilter(f)}
+                key={f}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      <div className={"gallery-grid " + (compact ? "photo-stack" : "section")}>
+        {indices.map((i) => (
+          <button className="gallery-card" key={i} onClick={() => setOpen(i)}>
+            <img src={image(i)} alt={titles[i]} loading="lazy" />
+            <span>
+              <span className="eyebrow">INSPIRATION / 0{i + 1}</span>
+              <strong>{titles[i]}</strong>
+              <Plus size={18} />
+            </span>
+          </button>
+        ))}
+      </div>
+      {open !== null && (
+        <Modal title={titles[open]} close={() => setOpen(null)}>
+          <img className="modal-photo" src={image(open)} alt={titles[open]} />
+          <p>
+            Editorial moodboard reference. This photograph is inspiration, not a
+            verified KPM Opulence project.
+          </p>
+          <div className="actions">
+            <button onClick={() => setOpen((open + 5) % 6)}>← Previous</button>
+            <button onClick={() => setOpen((open + 1) % 6)}>Next →</button>
+            <Link
+              className="button"
+              href="/studio"
+              onClick={() => setOpen(null)}
+            >
+              Create your experience
+            </Link>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
+type Mutate = (fn: (d: Data) => void, message: string) => boolean;
+function Studio({
+  config: c,
+  update,
+  data,
+  load,
+  mutate,
+}: {
+  config: Config;
+  update: (c: Partial<Config>) => void;
+  data: Data;
+  load: () => void;
+  mutate: Mutate;
+}) {
+  const router = useRouter(),
+    path = usePathname();
+  const [step, setStep] = useState(path.endsWith("/review") ? 5 : 0),
+    [errors, setErrors] = useState<Record<string, string>>({}),
+    [busy, setBusy] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const names = [
+    "Occasion",
+    "Style",
+    "Details",
+    "Your event",
+    "About you",
+    "Review",
+  ];
+  const items = estimate(c, data.packages);
+  const field = (key: keyof Config, label: string, type = "text") => (
+    <Field label={label}>
+      <input
+        id={key}
+        type={type}
+        value={String(c[key])}
+        aria-invalid={!!errors[key]}
+        aria-describedby={errors[key] ? key + "-error" : undefined}
+        onChange={(e) =>
+          update({
+            [key]: key === "guests" ? Number(e.target.value) : e.target.value,
+          })
+        }
+      />
+      {errors[key] && (
+        <small id={key + "-error"} className="error">
+          {errors[key]}
+        </small>
+      )}
+    </Field>
+  );
+  const validate = (all = false) => {
+    const e: Record<string, string> = {};
+    if (step === 3 || all) {
+      if (!c.date || c.date < new Date().toISOString().slice(0, 10))
+        e.date = "Choose today or a future date.";
+      if (!c.time) e.time = "Choose a preferred time.";
+      if (c.location.trim().length < 2)
+        e.location = "Enter your venue or city.";
+      if (!Number.isInteger(c.guests) || c.guests < 1)
+        e.guests = "Enter at least one guest.";
+    }
+    if (step === 4 || all) {
+      const parsed = configSchema.safeParse(c);
+      if (!parsed.success)
+        parsed.error.issues.forEach((i) => {
+          if (["name", "email", "phone", "consent"].includes(String(i.path[0])))
+            e[String(i.path[0])] =
+              "Please enter a valid " + String(i.path[0]) + ".";
+        });
+    }
+    setErrors(e);
+    if (Object.keys(e).length) {
+      requestAnimationFrame(() =>
+        document.getElementById(Object.keys(e)[0])?.focus(),
+      );
+      return false;
+    }
+    return true;
+  };
+  const go = (next: number) => {
+    setStep(next);
+    if (next === 5) router.replace("/studio/review", { scroll: false });
+    else if (path.endsWith("/review"))
+      router.replace("/studio", { scroll: false });
+    requestAnimationFrame(() => heading.current?.focus());
+  };
+  const send = () => {
+    if (busy || !validate(true)) return;
+    setBusy(true);
+    let id = "";
+    const ok = mutate((d) => {
+      id = submit(d, c);
+    }, "Enquiry saved. Your personalised brief is ready.");
+    if (ok) router.push("/enquiry/success/" + id);
+    else setBusy(false);
+  };
+  return (
+    <section className="studio-page">
+      <div className="studio-heading">
+        <div>
+          <p className="eyebrow">
+            THE EVENT STUDIO / YOUR OWN BEAUTIFUL POSSIBILITY
+          </p>
+          <h1>
+            Let’s make it <em>yours.</em>
+          </h1>
+        </div>
+        <button onClick={load}>
+          Load Example <ArrowUpRight size={16} />
+        </button>
+      </div>
+      <div className="stepper" aria-label="Configuration progress">
+        {names.map((n, i) => (
+          <button
+            key={n}
+            className={step === i ? "active" : ""}
+            onClick={() => {
+              if (i < step || validate()) go(i);
+            }}
+          >
+            <span>
+              {i < step ? <Check size={14} /> : String(i + 1).padStart(2, "0")}
+            </span>
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="builder">
+        <aside className="moodboard">
+          <div className="moodboard-main">
+            <img
+              key={c.style + c.occasion}
+              src={themeImage(c.style)}
+              alt={c.style + " illustrative moodboard"}
+            />
+            <div>
+              <span className="eyebrow">YOUR STYLING MOODBOARD</span>
+              <h2>{c.style}</h2>
+            </div>
+          </div>
+          <div className="moodboard-details">
+            {c.flowers && (
+              <figure>
+                <img
+                  src={image(c.flowerType === "White roses" ? 2 : 1)}
+                  alt={c.flowerType}
+                />
+                <figcaption>{c.flowerType}</figcaption>
+              </figure>
+            )}
+            {c.candles && (
+              <figure>
+                <img src={image(3)} alt="Floral and candle detail" />
+                <figcaption>Candlelight</figcaption>
+              </figure>
+            )}
+            {c.balloons && (
+              <figure>
+                <img
+                  className="balloon-photo"
+                  src="/images/balloon-styling.jpg"
+                  alt="Pink and white balloon garland styling inspiration"
+                />
+                <figcaption>{c.balloonType}</figcaption>
+              </figure>
+            )}
+          </div>
+          <div className="palette">
+            <i style={{ background: "#e7cfcf" }} />
+            <i style={{ background: "#f0e9df" }} />
+            <i style={{ background: "#c7ae91" }} />
+            <span>{c.occasion}</span>
+          </div>
+          <small>
+            Illustrative moodboard, not a rendered room design. Enabled details
+            appear below the main reference.
+          </small>
+        </aside>
+        <div className="builder-controls">
+          <p className="eyebrow">STEP 0{step + 1} / 06</p>
+          <h2 ref={heading} tabIndex={-1}>
+            {
+              [
+                "What are we celebrating?",
+                "Find your feeling.",
+                "The details make it yours.",
+                "Set the scene.",
+                "A little about you.",
+                "Your moment, considered.",
+              ][step]
+            }
+          </h2>
+          <div className="step-content" key={step}>
+            {step === 0 && (
+              <>
+                <div className="option-list">
+                  {occasions
+                    .filter(
+                      (o) => data.packages.find((p) => p.name === o)?.enabled,
+                    )
+                    .map((o, i) => (
+                      <button
+                        key={o}
+                        aria-pressed={c.occasion === o}
+                        className={
+                          c.occasion === o ? "option selected" : "option"
+                        }
+                        onClick={() =>
+                          update({
+                            occasion: o,
+                            officialPackage: "",
+                            extras: [],
+                          })
+                        }
+                      >
+                        <span>
+                          <strong>{o}</strong>
+                          <small>{occasionDescriptions[i]}</small>
+                        </span>
+                        {c.occasion === o ? (
+                          <Check size={19} />
+                        ) : (
+                          <ArrowUpRight size={19} />
+                        )}
+                      </button>
+                    ))}
+                </div>
+                <Field label="KPM package / product starting point">
+                  <select
+                    value={c.officialPackage || ""}
+                    onChange={(e) =>
+                      update({ officialPackage: e.target.value })
+                    }
+                  >
+                    <option value="">Create a bespoke brief</option>
+                    {officialPackages
+                      .filter(
+                        (p) =>
+                          p.group === packageGroup(c.occasion) ||
+                          (c.occasion === "Custom Event" && p.group === 3),
+                      )
+                      .map((p) => (
+                        <option key={p.name}>{p.name}</option>
+                      ))}
+                  </select>
+                </Field>
+                {c.officialPackage && (
+                  <div className="note">
+                    <strong>{c.officialPackage}</strong>
+                    <ul>
+                      {officialPackages
+                        .find((p) => p.name === c.officialPackage)
+                        ?.includes.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                    </ul>
+                    <small>
+                      Official package reference. Package pricing and final
+                      inclusions are confirmed by KPM. The demo estimate below
+                      is illustrative.
+                    </small>
+                  </div>
+                )}
+              </>
+            )}
+            {step === 1 && (
+              <div className="style-options">
+                {styles.map((s) => (
+                  <button
+                    key={s}
+                    aria-pressed={c.style === s}
+                    className={
+                      "style-option " + (c.style === s ? "selected" : "")
+                    }
+                    onClick={() => update({ style: s })}
+                  >
+                    <img src={themeImage(s)} alt={s + " inspiration"} />
+                    <span>
+                      {s}
+                      {c.style === s && <Check size={15} />}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {step === 2 && (
+              <>
+                <p className="muted">
+                  Curated details, not a fixed package. Custom installations are
+                  quoted individually.
+                </p>
+                {(["flowers", "balloons", "candles", "petals"] as const).map(
+                  (key, i) => {
+                    const label = [
+                      "Floral styling",
+                      "Balloon styling",
+                      "Candle styling",
+                      "Rose petals",
+                    ][i];
+                    const pkg = data.packages.find((p) => p.name === label);
+                    return (
+                      <div className="detail-option" key={key}>
+                        <label className="toggle-label">
+                          <span>
+                            <strong>{label}</strong>
+                            <small>
+                              {money(pkg?.price ?? 0)} · illustrative
+                            </small>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={c[key]}
+                            disabled={!pkg?.enabled}
+                            onChange={(e) =>
+                              update({ [key]: e.target.checked })
+                            }
+                          />
+                        </label>
+                        {c[key] && key !== "petals" && (
+                          <Field label="Styling preference">
+                            <select
+                              value={
+                                key === "flowers"
+                                  ? c.flowerType
+                                  : key === "balloons"
+                                    ? c.balloonType
+                                    : c.candleType
+                              }
+                              onChange={(e) =>
+                                update({
+                                  [key === "flowers"
+                                    ? "flowerType"
+                                    : key === "balloons"
+                                      ? "balloonType"
+                                      : "candleType"]: e.target.value,
+                                })
+                              }
+                            >
+                              {(key === "flowers"
+                                ? [
+                                    "Blush roses",
+                                    "White roses",
+                                    "Red roses",
+                                    "Mixed florals",
+                                    "Custom colours",
+                                  ]
+                                : key === "balloons"
+                                  ? [
+                                      "Balloon garland",
+                                      "Balloon arch",
+                                      "Room balloons",
+                                      "Custom installation",
+                                    ]
+                                  : [
+                                      "Subtle candle accents",
+                                      "Romantic candle arrangement",
+                                      "Decorative candle pathway",
+                                    ]
+                              ).map((o) => (
+                                <option key={o}>{o}</option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
+                {packageGroup(c.occasion) === 1 && (
+                  <fieldset className="room-extras">
+                    <legend>KPM room setup extras · quote-only</legend>
+                    {roomExtras.map((extra) => (
+                      <label className="consent" key={extra}>
+                        <input
+                          type="checkbox"
+                          checked={(c.extras || []).includes(extra)}
+                          onChange={(e) =>
+                            update({
+                              extras: e.target.checked
+                                ? [...(c.extras || []), extra]
+                                : (c.extras || []).filter((x) => x !== extra),
+                            })
+                          }
+                        />
+                        {extra}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+                <Field label="Backdrop · quote-only">
+                  <select
+                    value={c.backdrop}
+                    onChange={(e) => update({ backdrop: e.target.value })}
+                  >
+                    {[
+                      "None",
+                      "Floral backdrop",
+                      "Draped backdrop",
+                      "Decorative display",
+                      "Custom request",
+                    ].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                </Field>
+                {field(
+                  "message",
+                  "Personalised signage or message · quote-only",
+                )}
+              </>
+            )}
+            {step === 3 && (
+              <>
+                <div className="form-grid">
+                  {field("date", "Preferred event date", "date")}
+                  {field("time", "Preferred time", "time")}
+                  {field("location", "Location / venue")}
+                  {field("guests", "Number of guests", "number")}
+                  <Field label="Venue type">
+                    <select
+                      value={c.venue}
+                      onChange={(e) => update({ venue: e.target.value })}
+                    >
+                      <option>Indoor</option>
+                      <option>Outdoor</option>
+                      <option>To be confirmed</option>
+                    </select>
+                  </Field>
+                  <Field label="Budget range">
+                    <select
+                      value={c.budget}
+                      onChange={(e) => update({ budget: e.target.value })}
+                    >
+                      {[
+                        "Below R3,000",
+                        "R3,000–R5,000",
+                        "R5,000–R10,000",
+                        "R10,000+",
+                        "Let’s discuss",
+                      ].map((o) => (
+                        <option key={o}>{o}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Setup requirements and special notes">
+                  <textarea
+                    className="resize-none"
+                    value={c.notes}
+                    onChange={(e) => update({ notes: e.target.value })}
+                  />
+                </Field>
+                <p className="note">
+                  Your requested date is not confirmed availability. Delivery
+                  and installation are quoted separately.
+                </p>
+              </>
+            )}
+            {step === 4 && (
+              <>
+                <p className="note">
+                  This is a browser-only product demonstration. Use fictional
+                  details only; nothing is emailed or sent to KPM.
+                </p>
+                <div className="form-grid">
+                  {field("name", "Full name")}
+                  {field("email", "Email address", "email")}
+                  {field("phone", "Phone / demo contact")}
+                  <Field label="Preferred contact method">
+                    <select
+                      value={c.contact}
+                      onChange={(e) => update({ contact: e.target.value })}
+                    >
+                      <option>Email</option>
+                      <option>Phone</option>
+                      <option>WhatsApp</option>
+                    </select>
+                  </Field>
+                </div>
+                {field(
+                  "reference",
+                  "Inspiration reference (optional text; no upload)",
+                )}
+                <label className="consent">
+                  <input
+                    id="consent"
+                    type="checkbox"
+                    checked={c.consent}
+                    aria-invalid={!!errors.consent}
+                    aria-describedby={
+                      errors.consent ? "consent-error" : undefined
+                    }
+                    onChange={(e) => update({ consent: e.target.checked })}
+                  />
+                  I am using fictional details and understand this request stays
+                  in this browser.
+                </label>
+                {errors.consent && (
+                  <p className="error" id="consent-error">
+                    Confirm sample-only use to continue.
+                  </p>
+                )}
+              </>
+            )}
+            {step === 5 && (
+              <>
+                <Summary c={c} />
+                <div className="review-total">
+                  {items.map((i) => (
+                    <p key={i.name}>
+                      <span>{i.name}</span>
+                      <span>{money(i.price)}</span>
+                    </p>
+                  ))}
+                  <p>
+                    <span>Delivery / custom details</span>
+                    <span>To be confirmed</span>
+                  </p>
+                </div>
+                <button className="text-link" onClick={() => go(0)}>
+                  Edit your experience ↗
+                </button>
+                {Object.keys(errors).length > 0 && (
+                  <div className="error">
+                    Your brief needs attention.{" "}
+                    <button
+                      onClick={() => go(errors.date || errors.location ? 3 : 4)}
+                    >
+                      Review missing details →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <div className="estimate">
+            <span>YOUR ILLUSTRATIVE ESTIMATE</span>
+            <strong>{money(totals(items))}</strong>
+            <small>
+              Illustrative estimate only. Final pricing is subject to
+              confirmation by KPM Opulence.
+            </small>
+          </div>
+          <div className="actions builder-actions">
+            <button disabled={step === 0} onClick={() => go(step - 1)}>
+              ← Back
+            </button>
+            {step < 5 ? (
+              <button
+                className="button"
+                onClick={() => {
+                  if (validate()) go(step + 1);
+                }}
+              >
+                Continue <ArrowRight size={17} />
+              </button>
+            ) : (
+              <button className="button" disabled={busy} onClick={send}>
+                {busy ? "Saving…" : "Request My Personalised Quote"}{" "}
+                <ArrowUpRight size={16} />
+              </button>
+            )}
+          </div>
+          <small className="draft-note">
+            Draft automatically saved in this browser.
+          </small>
+        </div>
+      </div>
+    </section>
+  );
+}
+function Summary({ c }: { c: Config }) {
+  return (
+    <dl className="summary">
+      {[
+        ["Occasion", c.occasion],
+        ["Style", c.style],
+        ["KPM package reference", c.officialPackage || "Bespoke brief"],
+        ["Requested extras", (c.extras || []).join(", ") || "None"],
+        ["Flowers", c.flowers ? c.flowerType : "No"],
+        ["Balloons", c.balloons ? c.balloonType : "No"],
+        ["Candles", c.candles ? c.candleType : "No"],
+        ["Rose petals", c.petals ? "Yes" : "No"],
+        ["Backdrop", c.backdrop],
+        ["Date & time", c.date + " · " + c.time],
+        ["Location", c.location],
+        ["Guests / venue", c.guests + " / " + c.venue],
+        ["Budget", c.budget],
+        ["Customer", c.name],
+        ["Contact", c.email + " / " + c.phone + " / " + c.contact],
+        ["Personalisation", c.message || "None"],
+        ["Requirements", c.notes || "None"],
+        ["Inspiration", c.reference || "None"],
+      ].map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function Success({ id, data }: { id: string; data: Data }) {
+  const e = data.enquiries.find((e) => e.id === id);
+  return (
+    <section className="success page-title">
+      {e ? (
+        <>
+          <span className="success-mark">
+            <Check />
+          </span>
+          <p className="eyebrow">A BEAUTIFUL BEGINNING</p>
+          <h1>
+            Your moment.
+            <br />
+            <em>One step closer.</em>
+          </h1>
+          <p>Your fictional enquiry has been saved in this browser.</p>
+          <p className="reference">{id}</p>
+          <p>Enquiry → Review → Quotation → Confirmation</p>
+          <small>
+            No email has been sent. This demo does not track private staff
+            activity.
+          </small>
+          <Link className="button" href={"/admin/enquiries/" + id}>
+            View in Studio Manager <ArrowUpRight size={17} />
+          </Link>
+        </>
+      ) : (
+        <>
+          <h1>Enquiry not found.</h1>
+          <p>This enquiry may belong to a different browser session.</p>
+          <Link href="/studio">Return to the studio</Link>
+        </>
+      )}
+    </section>
+  );
+}
+function Admin({
+  path,
+  data: d,
+  mutate,
+  reset,
+}: {
+  path: string;
+  data: Data;
+  mutate: Mutate;
+  reset: () => void;
+}) {
+  const router = useRouter();
+  const section = path.split("/")[2] || "overview",
+    id = path.split("/")[3];
+  const [search, setSearch] = useState(""),
+    [status, setStatus] = useState("All"),
+    [page, setPage] = useState(0),
+    [month, setMonth] = useState("2026-11"),
+    [day, setDay] = useState(""),
+    [edit, setEdit] = useState<Quote | null>(null),
+    [note, setNote] = useState(""),
+    [pkg, setPkg] = useState(d.packages),
+    [selected, setSelected] = useState("");
+  const enquiry = d.enquiries.find((e) => e.id === id);
+  const quote = d.quotes.find((q) => q.id === id);
+  useEffect(() => {
+    setNote(enquiry?.notes ?? "");
+  }, [id, enquiry?.notes]);
+  const total = d.bookings.reduce((n, b) => n + b.total, 0),
+    accepted = d.quotes.filter((q) => q.status === "Accepted").length;
+  const heading = (
+    <div className="admin-heading">
+      <div>
+        <p className="eyebrow">KPM OPULENCE / STUDIO MANAGER</p>
+        <h1>
+          {enquiry
+            ? enquiry.config.name
+            : quote
+              ? "Your tailored quotation"
+              : section === "overview"
+                ? "A beautiful day to create."
+                : section[0].toUpperCase() + section.slice(1)}
+        </h1>
+        <p className="muted">
+          {section === "overview"
+            ? "A considered view of every moment in the making."
+            : "Fictional records. One connected studio."}
+        </p>
+      </div>
+      <Link className="button" href="/studio">
+        New experience <Plus size={16} />
+      </Link>
+    </div>
+  );
+  const list = d.enquiries.filter(
+    (e) =>
+      (status === "All" || e.status === status) &&
+      (e.config.name + " " + e.id + " " + e.config.occasion)
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
+  const enquiriesTable = (
+    <div className="panel">
+      <div className="panel-heading">
+        <h2>{section === "overview" ? "Recent enquiries" : "Enquiries"}</h2>
+        <span>{list.length} records</span>
+      </div>
+      <div className="table-controls">
+        <label>
+          <span className="sr-only">Search enquiries</span>
+          <input
+            placeholder="Search name, reference or occasion"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+          />
+        </label>
+        {search && (
+          <button
+            onClick={() => {
+              setSearch("");
+              setPage(0);
+            }}
+          >
+            Clear search
+          </button>
+        )}
+        <label>
+          <span className="sr-only">Filter status</span>
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(0);
+            }}
+          >
+            {["All", "New", "In review", "Quoted", "Booked", "Closed"].map(
+              (s) => (
+                <option key={s}>{s}</option>
+              ),
+            )}
+          </select>
+        </label>
+      </div>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>CLIENT / REFERENCE</th>
+              <th>EXPERIENCE</th>
+              <th>EVENT DATE</th>
+              <th>ESTIMATE</th>
+              <th>STATUS</th>
+              <th>DETAILS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.slice(page * 8, page * 8 + 8).map((e) => (
+              <tr key={e.id}>
+                <td>
+                  <strong>{e.config.name}</strong>
+                  <small>{e.id}</small>
+                </td>
+                <td>
+                  {e.config.occasion}
+                  <small>{e.config.style}</small>
+                </td>
+                <td>{e.config.date}</td>
+                <td>{money(e.estimate)}</td>
+                <td>
+                  <span className="badge">{e.status}</span>
+                  {e.followup && <small>Follow-up needed</small>}
+                </td>
+                <td>
+                  <Link className="text-link" href={"/admin/enquiries/" + e.id}>
+                    Open ↗
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!list.length && (
+          <p className="empty">
+            No enquiries match.{" "}
+            <button
+              onClick={() => {
+                setSearch("");
+                setStatus("All");
+              }}
+            >
+              Clear filters
+            </button>{" "}
+            or start an experience.
+          </p>
+        )}
+      </div>
+      <div className="pagination">
+        <span>
+          {list.length ? Math.min(page * 8 + 1, list.length) : 0}–
+          {Math.min(page * 8 + 8, list.length)} of {list.length}
+        </span>
+        <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+          Previous
+        </button>
+        <button
+          disabled={(page + 1) * 8 >= list.length}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+  const metrics = (
+    <div className="metrics">
+      {[
+        ["Enquiries", d.enquiries.length, "All saved briefs"],
+        [
+          "Open quotations",
+          d.quotes.filter((q) => q.status === "Draft").length,
+          "Awaiting acceptance",
+        ],
+        ["Confirmed bookings", d.bookings.length, "Accepted & confirmed"],
+        ["Booked value", money(total), "Illustrative, not collected revenue"],
+      ].map(([label, n, sub]) => (
+        <div className="metric" key={label}>
+          <span>{label}</span>
+          <strong>{n}</strong>
+          <small>{sub}</small>
+        </div>
+      ))}
+    </div>
+  );
+  const chart = (
+    <div className="panel">
+      <div className="panel-heading">
+        <h2>The studio, at a glance</h2>
+        <span>Live from saved records</span>
+      </div>
+      <div className="chart">
+        {occasions.map((o) => {
+          const n = d.enquiries.filter((e) => e.config.occasion === o).length;
+          return (
+            <div key={o}>
+              <span>{o}</span>
+              <div>
+                <i
+                  style={{
+                    width:
+                      Math.max(1, (n / Math.max(1, d.enquiries.length)) * 100) +
+                      "%",
+                  }}
+                />
+              </div>
+              <strong>{n}</strong>
+            </div>
+          );
+        })}
+      </div>
+      <p className="muted">
+        Quote acceptance{" "}
+        {d.quotes.length ? Math.round((accepted / d.quotes.length) * 100) : 0}%
+        · {accepted} of {d.quotes.length} quotations
+      </p>
+    </div>
+  );
+  function saveQuote() {
+    if (!edit) return;
+    mutate((next) => {
+      const q = next.quotes.find((q) => q.id === edit.id)!;
+      if (q.status === "Accepted")
+        throw Error("Accepted quotations are locked.");
+      Object.assign(q, edit, { version: q.version + 1 });
+    }, "Quotation saved.");
+    setEdit(null);
+  }
+  return (
+    <>
+      {heading}
+      {section === "overview" && (
+        <>
+          {metrics}
+          <div className="admin-grid">
+            {chart}
+            <div className="panel">
+              <p className="eyebrow">NEEDS YOUR ATTENTION</p>
+              <h2>A little follow-through.</h2>
+              {d.enquiries
+                .filter((e) => e.followup)
+                .slice(0, 5)
+                .map((e) => (
+                  <Link
+                    className="list-row"
+                    key={e.id}
+                    href={"/admin/enquiries/" + e.id}
+                  >
+                    <span>
+                      {e.config.name}
+                      <small>{e.config.date}</small>
+                    </span>
+                    <ArrowUpRight size={17} />
+                  </Link>
+                ))}
+              {!d.enquiries.some((e) => e.followup) && (
+                <p>No follow-ups. You’re all caught up.</p>
+              )}
+            </div>
+          </div>
+          {enquiriesTable}
+          <ActivityList d={d} />
+        </>
+      )}
+      {section === "enquiries" && !id && enquiriesTable}
+      {section === "enquiries" &&
+        id &&
+        (enquiry ? (
+          <>
+            <div className="admin-grid">
+              <div className="panel">
+                <p className="eyebrow">{enquiry.id}</p>
+                <h2>{enquiry.config.occasion}</h2>
+                <Summary c={enquiry.config} />
+                <div className="review-total">
+                  {enquiry.items.map((i) => (
+                    <p key={i.name}>
+                      <span>{i.name}</span>
+                      <span>{money(i.price)}</span>
+                    </p>
+                  ))}
+                  <p>
+                    <strong>Saved estimate</strong>
+                    <strong>{money(enquiry.estimate)}</strong>
+                  </p>
+                </div>
+              </div>
+              <div>
+                <div className="panel">
+                  <h2>Move the moment forward.</h2>
+                  <Field label="Enquiry status">
+                    <select
+                      value={enquiry.status}
+                      disabled={
+                        enquiry.status === "Booked" ||
+                        enquiry.status === "Quoted"
+                      }
+                      onChange={(e) =>
+                        mutate((n) => {
+                          n.enquiries.find((x) => x.id === id)!.status =
+                            e.target.value;
+                        }, "Enquiry status updated.")
+                      }
+                    >
+                      {["New", "In review", "Quoted", "Booked", "Closed"].map(
+                        (s) => (
+                          <option
+                            disabled={s === "Quoted" || s === "Booked"}
+                            key={s}
+                          >
+                            {s}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </Field>
+                  <label className="consent">
+                    <input
+                      type="checkbox"
+                      checked={enquiry.followup}
+                      onChange={(e) =>
+                        mutate((n) => {
+                          n.enquiries.find((x) => x.id === id)!.followup =
+                            e.target.checked;
+                        }, "Follow-up updated.")
+                      }
+                    />
+                    Requires follow-up
+                  </label>
+                  <Field label="Internal notes">
+                    <textarea
+                      className="resize-none"
+                      key={id}
+                      defaultValue={enquiry.notes}
+                      onChange={(e) => setNote(e.target.value)}
+                      onBlur={(e) => {
+                        if (e.target.value !== enquiry.notes)
+                          mutate((n) => {
+                            n.enquiries.find((x) => x.id === id)!.notes =
+                              e.target.value;
+                          }, "Internal note saved.");
+                      }}
+                    />
+                  </Field>
+                  <button
+                    onClick={() =>
+                      mutate((n) => {
+                        n.enquiries.find((x) => x.id === id)!.notes = note;
+                      }, "Internal note saved.")
+                    }
+                  >
+                    Save notes
+                  </button>
+                  <button
+                    className="button full"
+                    onClick={() => {
+                      let qid = "";
+                      if (
+                        mutate((n) => {
+                          qid = createQuote(n, id);
+                        }, "Quotation opened.")
+                      )
+                        router.push("/admin/quotations/" + qid);
+                    }}
+                  >
+                    Create / open quotation <ArrowUpRight size={16} />
+                  </button>
+                </div>
+                <div className="panel">
+                  <p className="eyebrow">LINKED CLIENT</p>
+                  <Link href={"/admin/clients/" + enquiry.clientId}>
+                    {enquiry.config.name} ↗
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <Empty />
+        ))}
+      {section === "quotations" && !id && (
+        <div className="panel">
+          <h2>Considered down to the last detail.</h2>
+          {d.quotes.map((q) => {
+            const e = d.enquiries.find((e) => e.id === q.enquiryId)!;
+            return (
+              <Link
+                className="list-row"
+                key={q.id}
+                href={"/admin/quotations/" + q.id}
+              >
+                <span>
+                  <strong>{e.config.name}</strong>
+                  <small>
+                    {q.id} · Version {q.version} · {q.status}
+                  </small>
+                </span>
+                <span>
+                  {money(totals(q.items, q.charge, q.discount, q.tax))} ↗
+                </span>
+              </Link>
+            );
+          })}
+          {!d.quotes.length && (
+            <p className="empty">
+              No quotations yet.{" "}
+              <Link href="/admin/enquiries">
+                Open an enquiry to create one →
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+      {section === "quotations" &&
+        id &&
+        (quote ? (
+          <>
+            <div className="quote-toolbar">
+              <span className="badge">
+                {quote.status} · v{quote.version}
+              </span>
+              <button onClick={() => exportPDF(d, quote)}>
+                <Download size={16} /> Download PDF
+              </button>
+              <button onClick={() => exportPDF(d, quote, true)}>
+                Event brief PDF
+              </button>
+              {quote.status === "Draft" && (
+                <>
+                  <button onClick={() => setEdit(structuredClone(quote))}>
+                    Edit quotation
+                  </button>
+                  <button
+                    className="button"
+                    onClick={() =>
+                      mutate((n) => {
+                        n.quotes.find((q) => q.id === id)!.status = "Accepted";
+                      }, "Quotation accepted.")
+                    }
+                  >
+                    Mark accepted <Check size={16} />
+                  </button>
+                </>
+              )}
+              {quote.status === "Accepted" && (
+                <button
+                  className="button"
+                  onClick={() => {
+                    if (
+                      mutate((n) => {
+                        confirmBooking(n, id);
+                      }, "Booking confirmed. Calendar and client updated.")
+                    )
+                      router.push("/admin/calendar");
+                  }}
+                >
+                  Confirm booking <CalendarDays size={16} />
+                </button>
+              )}
+            </div>
+            <div className="quote-paper">
+              <div className="quote-brand">
+                KPM <span>OPULENCE</span>
+              </div>
+              <p className="eyebrow">A MOMENT, BEAUTIFULLY CONSIDERED</p>
+              <h2>Personalised quotation</h2>
+              <p>
+                {quote.id} · Valid until {quote.validUntil}
+              </p>
+              <Summary
+                c={d.enquiries.find((e) => e.id === quote.enquiryId)!.config}
+              />
+              <div className="review-total">
+                {quote.items.map((i, j) => (
+                  <p key={j}>
+                    <span>
+                      {i.name} × {i.qty}
+                    </span>
+                    <span>{money(i.price * i.qty)}</span>
+                  </p>
+                ))}
+                <p>
+                  <span>Additional charges</span>
+                  <span>{money(quote.charge)}</span>
+                </p>
+                <p>
+                  <span>Discount</span>
+                  <span>−{money(quote.discount)}</span>
+                </p>
+                <p>
+                  <span>Tax</span>
+                  <span>{quote.tax}%</span>
+                </p>
+                <p className="total">
+                  <strong>Total</strong>
+                  <strong>
+                    {money(
+                      totals(
+                        quote.items,
+                        quote.charge,
+                        quote.discount,
+                        quote.tax,
+                      ),
+                    )}
+                  </strong>
+                </p>
+                <p>
+                  <span>Deposit · {quote.deposit}%</span>
+                  <span>
+                    {money(
+                      Math.round(
+                        (totals(
+                          quote.items,
+                          quote.charge,
+                          quote.discount,
+                          quote.tax,
+                        ) *
+                          quote.deposit) /
+                          100,
+                      ),
+                    )}
+                  </span>
+                </p>
+              </div>
+              <p>{quote.terms}</p>
+              <small>
+                Illustrative prices. No payment or email is processed. Concept
+                by paceIT.
+              </small>
+            </div>
+          </>
+        ) : (
+          <Empty />
+        ))}
+      {edit && (
+        <Modal title="Refine the quotation" close={() => setEdit(null)}>
+          <p className="note">
+            Amounts in rand. Changes save a new version. Accepted quotations are
+            locked.
+          </p>
+          {edit.items.map((item, i) => (
+            <div className="quote-edit-row" key={i}>
+              <Field label="Line item">
+                <input
+                  value={item.name}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      items: edit.items.map((x, j) =>
+                        j === i ? { ...x, name: e.target.value } : x,
+                      ),
+                    })
+                  }
+                />
+              </Field>
+              <Field label="Quantity">
+                <input
+                  type="number"
+                  min="1"
+                  value={item.qty}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      items: edit.items.map((x, j) =>
+                        j === i
+                          ? {
+                              ...x,
+                              qty: Math.max(
+                                1,
+                                Math.floor(Number(e.target.value)),
+                              ),
+                            }
+                          : x,
+                      ),
+                    })
+                  }
+                />
+              </Field>
+              <Field label="Unit price (R)">
+                <input
+                  type="number"
+                  min="0"
+                  value={item.price / 100}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      items: edit.items.map((x, j) =>
+                        j === i
+                          ? {
+                              ...x,
+                              price: Math.max(
+                                0,
+                                Math.round(Number(e.target.value) * 100),
+                              ),
+                            }
+                          : x,
+                      ),
+                    })
+                  }
+                />
+              </Field>
+              <button
+                aria-label={"Remove " + item.name}
+                onClick={() =>
+                  setEdit({
+                    ...edit,
+                    items: edit.items.filter((_, j) => j !== i),
+                  })
+                }
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() =>
+              setEdit({
+                ...edit,
+                items: [
+                  ...edit.items,
+                  { name: "Custom styling", qty: 1, price: 0 },
+                ],
+              })
+            }
+          >
+            Add line item +
+          </button>
+          <div className="form-grid">
+            {(["charge", "discount", "tax", "deposit"] as const).map((k) => (
+              <Field
+                label={
+                  {
+                    charge: "Additional charges (R)",
+                    discount: "Discount (R)",
+                    tax: "Tax (%)",
+                    deposit: "Deposit (%)",
+                  }[k]
+                }
+                key={k}
+              >
+                <input
+                  type="number"
+                  min="0"
+                  max={k === "tax" || k === "deposit" ? 100 : undefined}
+                  value={
+                    edit[k] / (k === "charge" || k === "discount" ? 100 : 1)
+                  }
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      [k]: Math.min(
+                        k === "tax" || k === "deposit" ? 100 : Infinity,
+                        Math.max(
+                          0,
+                          Math.round(
+                            Number(e.target.value) *
+                              (k === "charge" || k === "discount" ? 100 : 1),
+                          ),
+                        ),
+                      ),
+                    })
+                  }
+                />
+              </Field>
+            ))}
+            <Field label="Valid until">
+              <input
+                type="date"
+                value={edit.validUntil}
+                onChange={(e) =>
+                  setEdit({ ...edit, validUntil: e.target.value })
+                }
+              />
+            </Field>
+          </div>
+          <Field label="Terms">
+            <textarea
+              className="resize-none"
+              value={edit.terms}
+              onChange={(e) => setEdit({ ...edit, terms: e.target.value })}
+            />
+          </Field>
+          <div className="actions">
+            <strong aria-live="polite">
+              {money(totals(edit.items, edit.charge, edit.discount, edit.tax))}
+            </strong>
+            <button onClick={() => setEdit(null)}>Cancel</button>
+            <button className="button" onClick={saveQuote}>
+              Save quotation
+            </button>
+          </div>
+        </Modal>
+      )}
+      {section === "bookings" && (
+        <div className="panel">
+          <h2>Moments on the horizon.</h2>
+          {d.bookings.map((b) => {
+            const e = d.enquiries.find((e) => e.id === b.enquiryId)!;
+            return (
+              <article className="booking" key={b.id}>
+                <p className="eyebrow">{b.id} / CONFIRMED</p>
+                <h3>
+                  {e.config.name} · {e.config.occasion}
+                </h3>
+                <p>
+                  {e.config.date} at {e.config.time} · {e.config.location} ·{" "}
+                  {money(b.total)}
+                </p>
+                <Field label="Booking internal notes">
+                  <textarea
+                    className="resize-none"
+                    defaultValue={b.notes}
+                    onBlur={(ev) =>
+                      mutate((n) => {
+                        n.bookings.find((x) => x.id === b.id)!.notes =
+                          ev.target.value;
+                      }, "Booking notes saved.")
+                    }
+                  />
+                </Field>
+                <Link href={"/admin/quotations/" + b.quoteId}>
+                  Open linked quotation ↗
+                </Link>
+              </article>
+            );
+          })}
+          {!d.bookings.length && (
+            <p className="empty">
+              No bookings yet. Accept a quotation, then confirm the booking.
+            </p>
+          )}
+        </div>
+      )}
+      {section === "calendar" && (
+        <div className="panel">
+          <div className="panel-heading">
+            <h2>Space for something wonderful.</h2>
+            <Field label="Calendar month">
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => {
+                  setMonth(e.target.value || "2026-11");
+                  setDay("");
+                }}
+              />
+            </Field>
+          </div>
+          <Calendar month={month} data={d} day={day} choose={setDay} />
+          <div className="calendar-detail">
+            <h3>{day || month} / Confirmed events</h3>
+            {d.bookings
+              .filter((b) =>
+                d.enquiries
+                  .find((e) => e.id === b.enquiryId)!
+                  .config.date.startsWith(day || month),
+              )
+              .map((b) => {
+                const e = d.enquiries.find((e) => e.id === b.enquiryId)!;
+                return (
+                  <Link
+                    className="list-row"
+                    key={b.id}
+                    href={"/admin/quotations/" + b.quoteId}
+                  >
+                    <span>
+                      {e.config.name} · {e.config.occasion}
+                      <small>
+                        {e.config.date} · {e.config.time} · {e.config.location}
+                      </small>
+                    </span>
+                    <ArrowUpRight size={17} />
+                  </Link>
+                );
+              })}
+            {!d.bookings.some((b) =>
+              d.enquiries
+                .find((e) => e.id === b.enquiryId)!
+                .config.date.startsWith(day || month),
+            ) && (
+              <p className="empty">
+                No confirmed events for this {day ? "day" : "month"}. Enquiries
+                do not reserve a date.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      {section === "clients" && (
+        <div className="panel">
+          <h2>
+            {id
+              ? d.clients.find((c) => c.id === id)?.name || "Client not found"
+              : "People behind the moments."}
+          </h2>
+          {d.clients
+            .filter((c) => !id || c.id === id)
+            .map((c) => (
+              <div key={c.id} className="client-record">
+                <Link href={"/admin/clients/" + c.id}>
+                  <h3>{c.name} ↗</h3>
+                </Link>
+                <p>
+                  {c.email} · {c.phone}
+                </p>
+                {d.enquiries
+                  .filter((e) => e.clientId === c.id)
+                  .map((e) => (
+                    <div className="linked-record" key={e.id}>
+                      <Link href={"/admin/enquiries/" + e.id}>
+                        {e.id} · {e.config.occasion} · {e.status} ↗
+                      </Link>
+                      {d.quotes
+                        .filter((q) => q.enquiryId === e.id)
+                        .map((q) => (
+                          <Link key={q.id} href={"/admin/quotations/" + q.id}>
+                            {q.id} · {q.status} ↗
+                          </Link>
+                        ))}
+                      {d.bookings
+                        .filter((b) => b.enquiryId === e.id)
+                        .map((b) => (
+                          <Link key={b.id} href="/admin/calendar">
+                            {b.id} · Confirmed · {e.config.date} ↗
+                          </Link>
+                        ))}
+                    </div>
+                  ))}
+              </div>
+            ))}
+        </div>
+      )}
+      {section === "packages" && (
+        <div className="panel">
+          <h2>The building blocks.</h2>
+          <p>
+            Illustrative catalogue. Changes apply to new estimates; existing
+            enquiry snapshots and quotations stay intact.
+          </p>
+          {pkg.map((p, i) => (
+            <div className="package-row" key={p.name}>
+              <strong>{p.name}</strong>
+              <Field label="Illustrative price (R)">
+                <input
+                  type="number"
+                  min="0"
+                  value={p.price / 100}
+                  onChange={(e) =>
+                    setPkg(
+                      pkg.map((x, j) =>
+                        j === i
+                          ? {
+                              ...x,
+                              price: Math.max(
+                                0,
+                                Math.round(Number(e.target.value) * 100),
+                              ),
+                            }
+                          : x,
+                      ),
+                    )
+                  }
+                />
+              </Field>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={p.enabled}
+                  onChange={(e) =>
+                    setPkg(
+                      pkg.map((x, j) =>
+                        j === i ? { ...x, enabled: e.target.checked } : x,
+                      ),
+                    )
+                  }
+                />
+                Enabled
+              </label>
+            </div>
+          ))}
+          <button
+            className="button"
+            onClick={() =>
+              mutate((n) => {
+                n.packages = pkg;
+              }, "Catalogue saved. New estimates use updated prices.")
+            }
+          >
+            Save catalogue
+          </button>
+        </div>
+      )}
+      {section === "analytics" && (
+        <>
+          {metrics}
+          {chart}
+          <div className="panel">
+            <h2>Enquiry pipeline</h2>
+            {["New", "In review", "Quoted", "Booked", "Closed"].map((s) => (
+              <div className="list-row" key={s}>
+                <span>{s}</span>
+                <strong>
+                  {d.enquiries.filter((e) => e.status === s).length}
+                </strong>
+              </div>
+            ))}
+            <p>No external traffic or payment analytics are connected.</p>
+          </div>
+        </>
+      )}
+      {section === "settings" && (
+        <div className="panel">
+          <h2>Your demonstration workspace.</h2>
+          <p>Mode: isolated browser demo. Fictional records only.</p>
+          <p>
+            Data persists here across refreshes and synchronises between tabs in
+            this browser. Devices are not synchronised. No login, email
+            delivery, payment or production database is connected.
+          </p>
+          <p>Currency: ZAR · Locale: en-ZA · Timezone: Africa/Johannesburg</p>
+          <div className="actions">
+            <button
+              onClick={() => {
+                const blob = new Blob([JSON.stringify(d, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "kpm-demo-backup.json";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export demo backup
+            </button>
+            <button onClick={reset}>Reset Demo</button>
+          </div>
+        </div>
+      )}
+      {selected && (
+        <span>
+          {selected}
+          <button onClick={() => setSelected("")}>Dismiss</button>
+        </span>
+      )}
+    </>
+  );
+}
+function Empty() {
+  return (
+    <div className="panel">
+      <h2>Record not found.</h2>
+      <Link href="/admin">Back to overview</Link>
+    </div>
+  );
+}
+function ActivityList({ d }: { d: Data }) {
+  return (
+    <div className="panel">
+      <h2>In the studio</h2>
+      {d.activity.slice(0, 8).map((a) => (
+        <div className="list-row" key={a.id}>
+          <span>{a.text}</span>
+          <small>
+            {new Date(a.at).toLocaleString("en-ZA", {
+              timeZone: "Africa/Johannesburg",
+            })}{" "}
+            SAST
+          </small>
+        </div>
+      ))}
+    </div>
+  );
+}
+function Calendar({
+  month,
+  data,
+  day,
+  choose,
+}: {
+  month: string;
+  data: Data;
+  day: string;
+  choose: (s: string) => void;
+}) {
+  const [year, m] = month.split("-").map(Number);
+  const count = new Date(year, m, 0).getDate(),
+    offset = (new Date(year, m - 1, 1).getDay() + 6) % 7;
+  return (
+    <>
+      <div className="calendar-week">
+        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((n) => (
+          <span key={n}>{n}</span>
+        ))}
+      </div>
+      <div className="calendar-grid">
+        {Array.from({ length: offset }, (_, i) => (
+          <span key={"empty" + i} />
+        ))}
+        {Array.from({ length: count }, (_, i) => {
+          const date = month + "-" + String(i + 1).padStart(2, "0");
+          const bs = data.bookings.filter(
+            (b) =>
+              data.enquiries.find((e) => e.id === b.enquiryId)!.config.date ===
+              date,
+          );
+          return (
+            <button
+              key={date}
+              className={day === date ? "selected" : ""}
+              aria-label={date + ", " + bs.length + " confirmed events"}
+              onClick={() => choose(date)}
+            >
+              <span>{i + 1}</span>
+              {bs.map((b) => (
+                <small key={b.id}>
+                  {
+                    data.enquiries.find((e) => e.id === b.enquiryId)!.config
+                      .name
+                  }
+                </small>
+              ))}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}

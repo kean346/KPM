@@ -1,0 +1,151 @@
+import { money } from "../src/lib/model";
+import { test, expect } from "@playwright/test";
+test("customer brief through quote PDF and confirmed calendar booking", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", {
+      name: "KPM Opulence. Your moment, beautifully imagined.",
+    }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "Design Your Experience", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Load Example", exact: true }).click();
+  for (let i = 0; i < 5; i++)
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(
+    page.getByText(money(390000), { exact: true }).first(),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Request My Personalised Quote" })
+    .click();
+  await expect(page).toHaveURL(/enquiry\/success/);
+  await page.getByRole("link", { name: "View in Studio Manager" }).click();
+  await expect(
+    page.getByText("2026-11-21 · 18:30", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Create / open quotation" }).click();
+  await page
+    .getByRole("button", { name: "Edit quotation", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Unit price (R)")
+    .first()
+    .fill("2750");
+  await page
+    .getByRole("button", { name: "Save quotation", exact: true })
+    .click();
+  await page.evaluate(() => {
+    const original = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => {
+      if (blob instanceof Blob && blob.type === "application/pdf")
+        (window as unknown as { pdfBytes: Promise<number[]> }).pdfBytes = blob
+          .arrayBuffer()
+          .then((bytes) => Array.from(new Uint8Array(bytes)));
+      return original(blob);
+    };
+  });
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF", exact: true }).click();
+  const downloaded = await download;
+  expect(downloaded.suggestedFilename()).toMatch(/\.pdf$/);
+  try {
+    await downloaded.saveAs("../outputs/example-quotation.pdf");
+  } catch (error) {
+    if (process.env.KPM_SANDBOX_DOWNLOAD_FALLBACK !== "1") throw error;
+    test.info().annotations.push({
+      type: "environment limitation",
+      description:
+        "Sandbox cancels native browser downloads; exact emitted PDF bytes verified instead.",
+    });
+    const bytes = await page.evaluate(
+      () => (window as unknown as { pdfBytes: Promise<number[]> }).pdfBytes,
+    );
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile("../outputs/example-quotation.pdf", Buffer.from(bytes));
+  }
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile("../outputs/example-quotation.pdf");
+  expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+  expect(bytes.length).toBeGreaterThan(1000);
+  await page.getByRole("button", { name: "Mark accepted" }).click();
+  await page.getByRole("button", { name: "Confirm booking" }).click();
+  await expect(page).toHaveURL(/admin\/calendar/);
+  await page
+    .getByRole("button", {
+      name: "2026-11-21, 1 confirmed events",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByText("2026-11-21 · 18:30 · Pretoria, Gauteng"),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("button", {
+      name: "2026-11-21, 1 confirmed events",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+});
+test("mobile layouts and gallery dialog keyboard dismissal", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const route of [
+    "/",
+    "/collections",
+    "/gallery",
+    "/studio",
+    "/admin",
+    "/admin/calendar",
+  ]) {
+    await page.goto(route);
+    await expect(page.locator("#main")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.goto("/gallery");
+  await page.getByRole("button", { name: /A garden kind of romance/ }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+test("validation, catalogue updates and confirmed reset", async ({ page }) => {
+  await page.goto("/studio");
+  await page.getByRole("button", { name: "About you", exact: false }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.locator("#email")).toHaveAttribute("aria-invalid", "true");
+  await page.getByRole("button", { name: "Load Example", exact: true }).click();
+  await page.goto("/admin/packages");
+  await page.getByLabel("Illustrative price (R)").first().fill("3000");
+  await page
+    .getByRole("button", { name: "Save catalogue", exact: true })
+    .click();
+  await page.goto("/studio");
+  await expect(page.locator(".estimate strong")).toContainText(money(440000));
+  await page.goto("/admin/settings");
+  await page.getByRole("button", { name: "Reset Demo", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Keep my progress" })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Reset Demo", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Reset Demo", exact: true })
+    .click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/studio");
+  await expect(page.locator(".estimate strong")).toContainText(money(390000));
+});

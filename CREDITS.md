@@ -48,3 +48,20 @@ Loaded from images.unsplash.com. Free to use under the [Unsplash License](https:
 
 - GSAP 3.13.0, GreenSock, standard "no charge" license: https://gsap.com/standard-license
 - Lenis 1.3.4, darkroom.engineering, MIT: https://github.com/darkroomengineering/lenis
+
+## Additional KPM demo reference
+
+- Balloon styling: [Pink and white balloons decorate a party setup](https://unsplash.com/photos/pink-and-white-balloons-decorate-a-party-setup-zVN9yZZfPec), Samuel Lopez Cruz (@fotogugu), [Unsplash License](https://unsplash.com/license). Stored locally as public/images/balloon-styling.jpg. Illustrative inspiration, not a KPM project.
+
+## Homepage reference videos
+The three CloudFront MP4 URLs in the user-supplied homepage reference are stored locally as public/videos/experience-1.mp4 through experience-3.mp4, unchanged. All are verified 1920×1080. Poster JPEGs are frames from those clips. They are supplied visual references, not claimed KPM project footage; their original ownership is not covered by this repository's MIT licence.
+
+## Replacement 4K homepage footage
+
+The supplied soft 1080p references have been replaced by original 3840×2160 Pexels stock videos. They are used as website inspiration under the [Pexels License](https://www.pexels.com/license/), not represented as KPM projects.
+
+- ivory-venue-4k.mp4: [Agung Pandit Wiguna](https://www.pexels.com/video/elegant-indoor-wedding-venue-with-floral-decor-31446301/). Original 4K MP4, no enlargement or recompression. Matching JPEG poster is an extracted frame.
+
+- roses-raindrops-4k.mp4: [Marek Ruczaj](https://www.pexels.com/video/raindrops-on-delicate-pink-roses-36496434/). Original 4K MP4, no enlargement or recompression. Matching JPEG poster is an extracted frame.
+
+- celebration-table-4k.mp4: [Marian Croitoru](https://www.pexels.com/video/elegant-outdoor-wedding-table-in-tuscan-villa-29956462/). Original 4K MP4, no enlargement or recompression. Matching JPEG poster is an extracted frame.
