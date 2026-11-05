@@ -67,3 +67,7 @@ The five homepage collections are compact cards with viewport-triggered staggere
 ## Cinematic homepage
 Three original 3840×2160 Pexels stock clips replace the earlier soft 1080p reference videos. The selected scenes show an ivory floral venue, a detailed rose close-up and a styled celebration table. They were visually inspected and their encoded dimensions checked in the browser; no upscaling or recompression was used. See public/videos/manifest.json and CREDITS.md for author/source/licence details.
 Automatic 8-second rotation, 1.2-second crossfades, pause/resume, hidden-tab/offscreen suspension and reduced-motion posters remain supported. These are inspiration scenes, not KPM project footage. The 4K originals prioritise quality and are large assets; a production video CDN with adaptive delivery can provide lower-bandwidth variants.
+
+## Sharing and icons
+The branded share card is served at /opengraph-image.png (1200×630), with Open Graph and large Twitter-card metadata. /favicon.ico contains 16/32/48px variants; /icon.png is 512px and /apple-icon.png is 180px.
+For a custom production domain, set NEXT_PUBLIC_SITE_URL to its full HTTPS origin. Vercel's production project URL is detected automatically; localhost is only a development fallback. Social platforms may retain an older cached preview after deployment.

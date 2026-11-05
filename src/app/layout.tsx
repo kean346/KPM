@@ -22,7 +22,29 @@ const sans = localFont({
   variable: "--font-sans",
   display: "swap",
 });
+const siteOrigin =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? "https://" + process.env.VERCEL_PROJECT_PRODUCTION_URL
+    : process.env.VERCEL_URL
+      ? "https://" + process.env.VERCEL_URL
+      : "http://localhost:3000");
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin),
+  openGraph: {
+    title: "KPM Opulence — The Event Studio",
+    description:
+      "Your moment, beautifully imagined. Florals, romantic settings and personalised celebrations.",
+    siteName: "KPM Opulence",
+    type: "website",
+    locale: "en_ZA",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KPM Opulence — The Event Studio",
+    description: "Your moment, beautifully imagined.",
+    images: ["/opengraph-image.png"],
+  },
   title: "KPM Opulence — The Event Studio",
   description:
     "Your moment, beautifully imagined. An interactive event styling concept by paceIT.",
