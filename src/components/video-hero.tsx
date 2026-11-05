@@ -7,19 +7,25 @@ const scenes = [
     title: "Romance in motion",
     mood: "For the moments that mean everything.",
     src: "/videos/ivory-venue-4k.mp4",
+    mobile: "/videos/ivory-venue-mobile-hd.mp4",
     poster: "/videos/ivory-venue-4k.jpg",
+    mobilePoster: "/videos/ivory-venue-mobile.webp",
   },
   {
     title: "Beautifully considered",
     mood: "Every detail tells your story.",
     src: "/videos/roses-raindrops-4k.mp4",
+    mobile: "/videos/roses-raindrops-mobile-hd.mp4",
     poster: "/videos/roses-raindrops-4k.jpg",
+    mobilePoster: "/videos/roses-raindrops-mobile.webp",
   },
   {
     title: "Extraordinary moments",
     mood: "A feeling. A setting. Unforgettably yours.",
     src: "/videos/celebration-table-4k.mp4",
+    mobile: "/videos/celebration-table-mobile-hd.mp4",
     poster: "/videos/celebration-table-4k.jpg",
+    mobilePoster: "/videos/celebration-table-mobile.webp",
   },
 ];
 const DURATION = 8000;
@@ -33,14 +39,25 @@ export default function VideoHero() {
     [inView, setInView] = useState(true),
     [playing, setPlaying] = useState(false),
     [failed, setFailed] = useState<number[]>([]),
-    [motionReady, setMotionReady] = useState(false);
-  const running = motionReady && !paused && !reduced && visible && inView;
+    [motionReady, setMotionReady] = useState(false),
+    [mobile, setMobile] = useState(false),
+    [saveData, setSaveData] = useState(false);
+  const running =
+    motionReady && !paused && !reduced && !saveData && visible && inView;
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => {
       setReduced(query.matches);
       setMotionReady(true);
     };
+    const viewport = matchMedia("(max-width: 760px)");
+    const resize = () => setMobile(viewport.matches);
+    resize();
+    setSaveData(
+      !!(navigator as Navigator & { connection?: { saveData?: boolean } })
+        .connection?.saveData,
+    );
+    viewport.addEventListener("change", resize);
     change();
     query.addEventListener("change", change);
     const visibility = () => setVisible(!document.hidden);
@@ -52,6 +69,7 @@ export default function VideoHero() {
     if (root.current) observer.observe(root.current);
     return () => {
       query.removeEventListener("change", change);
+      viewport.removeEventListener("change", resize);
       document.removeEventListener("visibilitychange", visibility);
       observer.disconnect();
     };
@@ -82,7 +100,7 @@ export default function VideoHero() {
       cancelled = true;
       clearTimeout(pauseOthers);
     };
-  }, [active, running]);
+  }, [active, running, mobile]);
   useEffect(() => {
     if (!running) return;
     let cancelled = false,
@@ -130,11 +148,15 @@ export default function VideoHero() {
               videos.current[i] = el;
             }}
             className={active === i ? "active" : ""}
-            src={failed.includes(i) ? undefined : scene.src}
-            poster={scene.poster}
-            preload={
-              i === active || i === (active + 1) % 3 ? "auto" : "metadata"
+            src={
+              !motionReady || reduced || saveData || failed.includes(i)
+                ? undefined
+                : mobile
+                  ? scene.mobile
+                  : scene.src
             }
+            poster={mobile ? scene.mobilePoster : scene.poster}
+            preload={i === active && running ? "auto" : "none"}
             muted
             playsInline
             loop
@@ -171,7 +193,7 @@ export default function VideoHero() {
               <span className="scene-index">0{i + 1} /</span>
               <span>{scene.title}</span>
               <i>
-                <b key={active + "-" + i} />
+                <b key={active + "-" + i + "-" + running} />
               </i>
             </div>
           ))}
@@ -206,20 +228,27 @@ export default function VideoHero() {
           <button
             className="cinema-pause"
             aria-label={
-              paused || reduced
+              paused || reduced || saveData
                 ? "Play background videos"
                 : "Pause background videos"
             }
             aria-pressed={paused}
             onClick={() => {
-              if (reduced) {
+              if (reduced || saveData) {
+                setSaveData(false);
                 setReduced(false);
                 setPaused(false);
               } else setPaused(!paused);
             }}
           >
-            {paused || reduced ? <Play size={13} /> : <Pause size={13} />}
-            <span>{paused || reduced ? "PLAY FILM" : "PAUSE FILM"}</span>
+            {paused || reduced || saveData ? (
+              <Play size={13} />
+            ) : (
+              <Pause size={13} />
+            )}
+            <span>
+              {paused || reduced || saveData ? "PLAY FILM" : "PAUSE FILM"}
+            </span>
           </button>
         </div>
         {failed.length === 3 && (

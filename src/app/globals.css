@@ -2691,3 +2691,31 @@ dialog::backdrop {
     animation: none !important;
   }
 }
+@media (max-width: 760px) {
+  button,
+  .button {
+    min-height: 44px;
+  }
+  .mobile-toggle,
+  .modal-head > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .builder input:not([type="checkbox"]),
+  .builder select,
+  .builder textarea {
+    font-size: 16px;
+  }
+  .mobile-nav a {
+    padding: 10px 0;
+  }
+  .cinema-foot > a {
+    display: none;
+  }
+  .cinema-foot {
+    justify-content: flex-end;
+  }
+  .cinema-background {
+    background-image: url("/videos/ivory-venue-mobile.webp");
+  }
+}

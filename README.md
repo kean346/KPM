@@ -71,3 +71,5 @@ Automatic 8-second rotation, 1.2-second crossfades, pause/resume, hidden-tab/off
 ## Sharing and icons
 The branded share card is served at /opengraph-image.png (1200×630), with Open Graph and large Twitter-card metadata. /favicon.ico contains 16/32/48px variants; /icon.png is 512px and /apple-icon.png is 180px.
 For a custom production domain, set NEXT_PUBLIC_SITE_URL to its full HTTPS origin. Vercel's production project URL is detected automatically; localhost is only a development fallback. Social platforms may retain an older cached preview after deployment.
+
+Mobile performance refinement: phones use dedicated 1080×1920 H.264 fast-start clips (6.26 MB, 3.82 MB, 3.60 MB) instead of the 4K masters (28.13 MB, 47.80 MB, 26.89 MB), about 87% less combined video data. Desktop retains the original 4K. Only the active clip preloads; reduced-motion/data-saver visitors receive a poster until they opt into playback. Mobile WebP posters, 44px controls and 16px studio inputs improve loading, touch and iOS behaviour.
