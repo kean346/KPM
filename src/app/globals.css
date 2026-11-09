@@ -2728,3 +2728,23 @@ dialog::backdrop {
   .photo-stack .gallery-card strong { font-size: 17px; }
   .photo-stack .eyebrow { font-size: 6px; letter-spacing: 0.05em; }
 }
+
+/* Native visibility trigger: replay the fluid fan whenever the edit enters view. */
+@media (prefers-reduced-motion: no-preference) {
+  .photo-stack .gallery-card { --flow-x: 0%; --flow-angle: 0deg; }
+  .photo-stack .gallery-card:first-child { --flow-x: 70%; --flow-angle: -14deg; }
+  .photo-stack .gallery-card:last-child { --flow-x: -70%; --flow-angle: 14deg; }
+  .photo-stack.frames-in-view .gallery-card {
+    animation: frame-water-rise 2.2s cubic-bezier(.22,.61,.36,1) both;
+    transform-origin: 50% 85%;
+  }
+  .photo-stack.frames-in-view .gallery-card:nth-child(2) { animation-delay: .16s; }
+  .photo-stack.frames-in-view .gallery-card:nth-child(3) { animation-delay: .32s; }
+}
+@keyframes frame-water-rise {
+  0% { transform: translate(var(--flow-x), 160px) rotate(var(--flow-angle)) scale(.76); }
+  38% { transform: translate(calc(var(--flow-x) * .5), -25px) rotate(calc(var(--flow-angle) * -.35)) scale(.96); }
+  70% { transform: translate(0, -12px) rotate(calc(var(--flow-angle) * .1)) scale(1.035); }
+  86% { transform: translate(0, 5px) rotate(0deg) scale(.99); }
+  100% { transform: none; }
+}

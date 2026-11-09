@@ -458,6 +458,15 @@ export default function Experience() {
 function Home() {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const stack = root.current?.querySelector(".photo-stack");
+    if (!stack) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      stack.classList.toggle("frames-in-view", entry.isIntersecting);
+    }, { threshold: 0.2 });
+    observer.observe(stack);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
       const mm = gsap.matchMedia();
@@ -498,26 +507,7 @@ function Home() {
               },
             });
           });
-        const frames = gsap.utils.toArray<HTMLElement>(".photo-stack .gallery-card");
-        const flow = gsap.timeline({
-          scrollTrigger: {
-            trigger: ".photo-stack", start: "top 82%",
-            toggleActions: "play none none reverse",
-          },
-        });
-        frames.forEach((frame, i) => {
-          flow.fromTo(frame, {
-            x: 0, xPercent: (1 - i) * 65, y: 150 + Math.abs(i - 1) * 45,
-            rotation: (i - 1) * 14, rotationX: 16, scale: 0.78,
-            transformOrigin: "50% 85%",
-          }, {
-            x: 0, xPercent: (1 - i) * 12, y: -18, rotation: (i - 1) * -3,
-            rotationX: 0, scale: 1.025, duration: 1.25, ease: "sine.inOut",
-          }, i * 0.14).to(frame, {
-            x: 0, xPercent: 0, y: 0, rotation: 0, scale: 1,
-            duration: 0.7, ease: "back.out(1.4)",
-          }, 1.25 + i * 0.14);
-        });
+
       });
     }, root);
     // Fonts and lazy images can move section triggers after the first render.

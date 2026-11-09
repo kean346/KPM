@@ -188,6 +188,10 @@ test("phone loads a single lightweight film and frames settle side by side", asy
     const stack = document.querySelector(".photo-stack")!;
     window.scrollTo({ top: stack.getBoundingClientRect().top + scrollY - innerHeight * 0.22, behavior: "instant" });
   });
+  await expect(page.locator(".photo-stack")).toHaveClass(/frames-in-view/);
+  await expect.poll(() => frames.first().evaluate(el => getComputedStyle(el).animationName)).toBe("frame-water-rise");
+  const initialTransform = await frames.first().evaluate(el => getComputedStyle(el).transform);
+  await expect.poll(() => frames.first().evaluate(el => getComputedStyle(el).transform)).not.toBe(initialTransform);
   await expect.poll(async () => {
     const boxes = await frames.evaluateAll(elements => elements.map(el => el.getBoundingClientRect().top));
     return Math.max(...boxes) - Math.min(...boxes);
