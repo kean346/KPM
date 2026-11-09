@@ -155,7 +155,7 @@ test("homepage motion survives navigation and reduced motion stays readable", as
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const video = page.locator(".cinema-background video.active");
-  await expect(video).toHaveAttribute("src", /desktop-hd\.mp4$/);
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentSrc)).toMatch(/desktop-hd\.mp4$/);
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
   const card = page.locator(".collection-card-reveal").first();
   await card.scrollIntoViewIfNeeded();
@@ -169,4 +169,27 @@ test("homepage motion survives navigation and reduced motion stays readable", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.paused)).toBe(true);
   await expect(card).toHaveCSS("opacity", "1");
+});
+
+test("phone loads a single lightweight film and frames settle side by side", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const media: string[] = [];
+  page.on("request", request => { if (request.url().endsWith(".mp4")) media.push(request.url()); });
+  await page.goto("/");
+  const video = page.locator(".cinema-background video.active");
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
+  expect(media.every(url => url.endsWith("-phone.mp4"))).toBe(true);
+  expect(new Set(media).size).toBe(1);
+  const frames = page.locator(".photo-stack .gallery-card");
+  await page.evaluate(() => {
+    const stack = document.querySelector(".photo-stack")!;
+    window.scrollTo({ top: stack.getBoundingClientRect().top + scrollY - innerHeight * 0.22, behavior: "instant" });
+  });
+  await expect.poll(async () => {
+    const boxes = await frames.evaluateAll(elements => elements.map(el => el.getBoundingClientRect().top));
+    return Math.max(...boxes) - Math.min(...boxes);
+  }).toBeLessThan(3);
+  await frames.first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
 });

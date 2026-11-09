@@ -64,5 +64,41 @@
     "provenance": "Pexels stock footage; illustrative inspiration, not KPM project footage.",
     "derived_from": "celebration-table-4k.mp4",
     "encoding": "H.264, CRF 24, fast-start; desktop background delivery"
+  },
+  {
+    "file": "roses-raindrops-phone.mp4",
+    "width": 960,
+    "height": 540,
+    "duration": 8,
+    "author": "Marek Ruczaj",
+    "source": "https://www.pexels.com/video/raindrops-on-delicate-pink-roses-36496434/",
+    "license": "https://www.pexels.com/license/",
+    "provenance": "Pexels stock footage; illustrative inspiration, not KPM project footage.",
+    "derived_from": "roses-raindrops-4k.mp4",
+    "encoding": "H.264 CRF 28, 24 fps, capped 650 kbps, fast-start"
+  },
+  {
+    "file": "ivory-venue-phone.mp4",
+    "width": 960,
+    "height": 540,
+    "duration": 8,
+    "author": "Agung Pandit Wiguna",
+    "source": "https://www.pexels.com/video/elegant-indoor-wedding-venue-with-floral-decor-31446301/",
+    "license": "https://www.pexels.com/license/",
+    "provenance": "Pexels stock footage; illustrative inspiration, not KPM project footage.",
+    "derived_from": "ivory-venue-4k.mp4",
+    "encoding": "H.264 CRF 28, 24 fps, capped 650 kbps, fast-start"
+  },
+  {
+    "file": "celebration-table-phone.mp4",
+    "width": 960,
+    "height": 540,
+    "duration": 8,
+    "author": "Marian Croitoru",
+    "source": "https://www.pexels.com/video/elegant-outdoor-wedding-table-in-tuscan-villa-29956462/",
+    "license": "https://www.pexels.com/license/",
+    "provenance": "Pexels stock footage; illustrative inspiration, not KPM project footage.",
+    "derived_from": "celebration-table-4k.mp4",
+    "encoding": "H.264 CRF 28, 24 fps, capped 650 kbps, fast-start"
   }
 ]

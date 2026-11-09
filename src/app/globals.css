@@ -2085,7 +2085,7 @@ dialog::backdrop {
 }
 @media (hover: hover) and (pointer: fine) {
   .collection-card:hover {
-    transform: translate(var(--hover-x), -7px);
+    transform: perspective(900px) translate(var(--hover-x), -7px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   }
 }
 .collection-card:focus-visible,
@@ -2717,4 +2717,14 @@ dialog::backdrop {
   .cinema-background {
     background-image: url("/videos/ivory-venue-mobile.webp");
   }
+}
+
+/* The inspiration edit rises as one current, then separates into three frames. */
+.photo-stack { perspective: 1100px; }
+@media (max-width: 760px) {
+  .photo-stack { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .photo-stack .gallery-card:last-child { grid-column: auto; margin: 0; }
+  .photo-stack .gallery-card img { height: 180px; border-radius: 3px; }
+  .photo-stack .gallery-card strong { font-size: 17px; }
+  .photo-stack .eyebrow { font-size: 6px; letter-spacing: 0.05em; }
 }

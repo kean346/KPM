@@ -130,11 +130,8 @@ export default function VideoHero() {
               videos.current[i] = el;
             }}
             className={active === i ? "active" : ""}
-            src={failed.includes(i) ? undefined : scene.src}
             poster={scene.poster}
-            preload={
-              i === active || i === (active + 1) % 3 ? "auto" : "metadata"
-            }
+            preload={i === active ? "auto" : "none"}
             muted
             playsInline
             loop
@@ -142,7 +139,12 @@ export default function VideoHero() {
             onError={() =>
               setFailed((prev) => (prev.includes(i) ? prev : [...prev, i]))
             }
-          />
+          >
+            {!failed.includes(i) && <>
+              <source media="(max-width: 760px)" src={scene.src.replace("-desktop-hd.mp4", "-phone.mp4")} type="video/mp4" />
+              <source src={scene.src} type="video/mp4" />
+            </>}
+          </video>
         ))}
       </div>
       <div className="cinema-overlay" />

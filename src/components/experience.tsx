@@ -505,24 +505,32 @@ function Home() {
               },
             });
           });
-        gsap.from(".photo-stack .gallery-card", {
-          x: (i) => (1 - i) * 160,
-          y: (i) => Math.abs(i - 1) * 70,
-          rotation: (i) => (i - 1) * 9,
-          scale: 0.85,
+        const frames = gsap.utils.toArray<HTMLElement>(".photo-stack .gallery-card");
+        const flow = gsap.timeline({
           scrollTrigger: {
-            trigger: ".photo-stack",
-            start: "top 90%",
-            end: "top 20%",
-            scrub: 1,
+            trigger: ".photo-stack", start: "top 100%", end: "top 60%",
+            scrub: 0.65, invalidateOnRefresh: true,
           },
+        });
+        frames.forEach((frame, i) => {
+          flow.fromTo(frame, {
+            x: 0, xPercent: (1 - i) * 65, y: 150 + Math.abs(i - 1) * 45,
+            rotation: (i - 1) * 14, rotationX: 16, scale: 0.78,
+            transformOrigin: "50% 85%",
+          }, {
+            x: 0, xPercent: (1 - i) * 12, y: -18, rotation: (i - 1) * -3,
+            rotationX: 0, scale: 1.025, duration: 0.8, ease: "power2.out",
+          }, i * 0.09).to(frame, {
+            x: 0, xPercent: 0, y: 0, rotation: 0, scale: 1,
+            duration: 0.5, ease: "sine.inOut",
+          }, 0.8 + i * 0.09);
         });
       });
     }, root);
     // Fonts and lazy images can move section triggers after the first render.
     let disposed = false;
     const refresh = () => {
-      if (!disposed) ScrollTrigger.refresh();
+      if (!disposed) ScrollTrigger.refresh(true);
     };
     void document.fonts.ready.then(refresh);
     const images = Array.from(root.current?.querySelectorAll("img") ?? []);
@@ -584,15 +592,20 @@ function Home() {
                 href={"/collections/" + slugs[i]}
                 onPointerMove={(e) => {
                   if (e.pointerType === "touch") return;
+                  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
                   const rect = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty("--tilt-y", ((e.clientX - rect.left) / rect.width - 0.5) * 9 + "deg");
+                  e.currentTarget.style.setProperty("--tilt-x", (0.5 - (e.clientY - rect.top) / rect.height) * 7 + "deg");
                   e.currentTarget.style.setProperty(
                     "--hover-x",
                     ((e.clientX - rect.left) / rect.width - 0.5) * 12 + "px",
                   );
                 }}
-                onPointerLeave={(e) =>
-                  e.currentTarget.style.setProperty("--hover-x", "0px")
-                }
+                onPointerLeave={(e) => {
+                  e.currentTarget.style.setProperty("--hover-x", "0px");
+                  e.currentTarget.style.setProperty("--tilt-x", "0deg");
+                  e.currentTarget.style.setProperty("--tilt-y", "0deg");
+                }}
               >
                 <div className="collection-card-photo">
                   <img
