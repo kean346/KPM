@@ -149,3 +149,24 @@ test("validation, catalogue updates and confirmed reset", async ({ page }) => {
   await page.goto("/studio");
   await expect(page.locator(".estimate strong")).toContainText(money(390000));
 });
+
+test("homepage motion survives navigation and reduced motion stays readable", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const video = page.locator(".cinema-background video.active");
+  await expect(video).toHaveAttribute("src", /desktop-hd\.mp4$/);
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
+  const card = page.locator(".collection-card-reveal").first();
+  await card.scrollIntoViewIfNeeded();
+  await expect(card).toHaveCSS("opacity", "1");
+  await card.getByRole("link").click();
+  await expect(page).toHaveURL(/collections\/romantic-proposals/);
+  await page.getByRole("banner").locator(".brand").click();
+  await expect(page).toHaveURL("/");
+  await page.locator(".collection-card-reveal").first().scrollIntoViewIfNeeded();
+  await expect(page.locator(".collection-card-reveal").first()).toHaveCSS("opacity", "1");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.paused)).toBe(true);
+  await expect(card).toHaveCSS("opacity", "1");
+});

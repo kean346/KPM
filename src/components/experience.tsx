@@ -41,7 +41,10 @@ import {
   confirmBooking,
   configSchema,
 } from "@/lib/model";
-import { exportPDF } from "@/lib/pdf";
+const exportPDF = async (...args: Parameters<typeof import("@/lib/pdf").exportPDF>) => {
+  const pdf = await import("@/lib/pdf");
+  pdf.exportPDF(...args);
+};
 import VideoHero from "./video-hero";
 import {
   officialPackages,
@@ -201,6 +204,26 @@ export default function Experience() {
   useEffect(() => {
     setMenu(false);
   }, [path]);
+  useEffect(() => {
+    if (!data || path === "/") return;
+    gsap.registerPlugin(ScrollTrigger);
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const main = document.querySelector("#main");
+      if (!main) return;
+      gsap.from(main, { opacity: 0, y: 14, duration: 0.45, ease: "power2.out", clearProps: "all" });
+      gsap.utils.toArray<HTMLElement>(main.querySelectorAll(".gallery-card")).forEach((card, index) => {
+        gsap.from(card, {
+          y: 32, opacity: 0, duration: 0.65, delay: (index % 3) * 0.06,
+          ease: "power3.out",
+          scrollTrigger: { trigger: card, start: "top 96%", once: true },
+        });
+      });
+    });
+    return () => media.revert();
+    // Animate route entry, not each edit to the browser-local demo data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, !!data]);
   if (!data)
     return (
       <main className="loading">
@@ -478,6 +501,7 @@ function Home() {
                 trigger: el,
                 start: "top 92%",
                 toggleActions: "play none none reverse",
+                invalidateOnRefresh: true,
               },
             });
           });
@@ -495,7 +519,19 @@ function Home() {
         });
       });
     }, root);
-    return () => ctx.revert();
+    // Fonts and lazy images can move section triggers after the first render.
+    let disposed = false;
+    const refresh = () => {
+      if (!disposed) ScrollTrigger.refresh();
+    };
+    void document.fonts.ready.then(refresh);
+    const images = Array.from(root.current?.querySelectorAll("img") ?? []);
+    images.forEach((image) => image.addEventListener("load", refresh));
+    return () => {
+      disposed = true;
+      images.forEach((image) => image.removeEventListener("load", refresh));
+      ctx.revert();
+    };
   }, []);
   return (
     <div ref={root}>

@@ -2081,7 +2081,12 @@ dialog::backdrop {
   color: var(--accent);
 }
 .collection-card:focus-visible {
-  transform: translateY(-5px);
+  transform: translateY(-7px);
+}
+@media (hover: hover) and (pointer: fine) {
+  .collection-card:hover {
+    transform: translate(var(--hover-x), -7px);
+  }
 }
 .collection-card:focus-visible,
 .collection-card:hover {
@@ -2708,12 +2713,6 @@ dialog::backdrop {
   }
   .mobile-nav a {
     padding: 10px 0;
-  }
-  .cinema-foot > a {
-    display: none;
-  }
-  .cinema-foot {
-    justify-content: flex-end;
   }
   .cinema-background {
     background-image: url("/videos/ivory-venue-mobile.webp");
