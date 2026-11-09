@@ -79,15 +79,15 @@
   },
   {
     "file": "ivory-venue-phone.mp4",
-    "width": 960,
-    "height": 540,
+    "width": 640,
+    "height": 360,
     "duration": 8,
     "author": "Agung Pandit Wiguna",
     "source": "https://www.pexels.com/video/elegant-indoor-wedding-venue-with-floral-decor-31446301/",
     "license": "https://www.pexels.com/license/",
     "provenance": "Pexels stock footage; illustrative inspiration, not KPM project footage.",
     "derived_from": "ivory-venue-4k.mp4",
-    "encoding": "H.264 CRF 28, 24 fps, capped 650 kbps, fast-start"
+    "encoding": "H.264 CRF 31, capped 250 kbps, 24-frame keyframes, fast-start"
   },
   {
     "file": "celebration-table-phone.mp4",

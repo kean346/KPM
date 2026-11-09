@@ -2263,7 +2263,7 @@ dialog::backdrop {
   z-index: -2;
 }
 .cinema-background {
-  background: #141315 url("/videos/ivory-venue-4k.jpg") center/cover no-repeat;
+  background: #141315 url("/videos/ivory-venue-preview.webp") center/cover no-repeat;
 }
 .cinema-background video {
   position: absolute;
@@ -2715,7 +2715,7 @@ dialog::backdrop {
     padding: 10px 0;
   }
   .cinema-background {
-    background-image: url("/videos/ivory-venue-mobile.webp");
+    background-image: url("/videos/ivory-venue-preview.webp");
   }
 }
 

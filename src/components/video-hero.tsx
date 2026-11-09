@@ -1,25 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowDown, Pause, Play } from "lucide-react";
+import { ArrowUpRight, ArrowDown } from "lucide-react";
 const scenes = [
   {
     title: "Romance in motion",
     mood: "For the moments that mean everything.",
     src: "/videos/ivory-venue-desktop-hd.mp4",
-    poster: "/videos/ivory-venue-4k.jpg",
+    poster: "/videos/ivory-venue-preview.webp",
   },
   {
     title: "Beautifully considered",
     mood: "Every detail tells your story.",
     src: "/videos/roses-raindrops-desktop-hd.mp4",
-    poster: "/videos/roses-raindrops-4k.jpg",
+    poster: "/videos/roses-raindrops-preview.webp",
   },
   {
     title: "Extraordinary moments",
     mood: "A feeling. A setting. Unforgettably yours.",
     src: "/videos/celebration-table-desktop-hd.mp4",
-    poster: "/videos/celebration-table-4k.jpg",
+    poster: "/videos/celebration-table-preview.webp",
   },
 ];
 const DURATION = 8000;
@@ -27,14 +27,13 @@ export default function VideoHero() {
   const root = useRef<HTMLElement>(null),
     videos = useRef<(HTMLVideoElement | null)[]>([]);
   const [active, setActive] = useState(0),
-    [paused, setPaused] = useState(false),
     [reduced, setReduced] = useState(false),
     [visible, setVisible] = useState(true),
     [inView, setInView] = useState(true),
     [playing, setPlaying] = useState(false),
     [failed, setFailed] = useState<number[]>([]),
     [motionReady, setMotionReady] = useState(false);
-  const running = motionReady && !paused && !reduced && visible && inView;
+  const running = motionReady && !reduced && visible && inView;
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => {
@@ -130,8 +129,9 @@ export default function VideoHero() {
               videos.current[i] = el;
             }}
             className={active === i ? "active" : ""}
-            poster={scene.poster}
+            poster={i === active ? scene.poster : undefined}
             preload={i === active ? "auto" : "none"}
+            autoPlay={i === active}
             muted
             playsInline
             loop
@@ -205,31 +205,14 @@ export default function VideoHero() {
             DISCOVER THE POSSIBILITIES <ArrowDown size={14} />
           </a>
           <span key={active}>{scenes[active].mood}</span>
-          <button
-            className="cinema-pause"
-            aria-label={
-              paused || reduced
-                ? "Play background videos"
-                : "Pause background videos"
-            }
-            aria-pressed={paused}
-            onClick={() => {
-              if (reduced) {
-                setReduced(false);
-                setPaused(false);
-              } else setPaused(!paused);
-            }}
-          >
-            {paused || reduced ? <Play size={13} /> : <Pause size={13} />}
-            <span>{paused || reduced ? "PLAY FILM" : "PAUSE FILM"}</span>
-          </button>
+
         </div>
         {failed.length === 3 && (
           <span className="cinema-fallback-note">
             Visual inspiration · Explore your experience below
           </span>
         )}
-        {!playing && !reduced && !paused && (
+        {!playing && !reduced && (
           <span className="sr-only">
             The film is loading. You can explore the studio while it loads.
           </span>

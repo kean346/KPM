@@ -133,7 +133,7 @@ function Modal({
 export default function Experience() {
   const path = usePathname(),
     router = useRouter();
-  const [data, setData] = useState<Data | null>(null),
+  const [data, setData] = useState<Data>(seed),
     [config, setConfig] = useState<Config>(initial),
     [notice, setNotice] = useState(""),
     [menu, setMenu] = useState(false),
@@ -224,13 +224,6 @@ export default function Experience() {
     // Animate route entry, not each edit to the browser-local demo data.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, !!data]);
-  if (!data)
-    return (
-      <main className="loading">
-        <Flower2 />
-        <p>Opening the studio…</p>
-      </main>
-    );
   const nav = (
     <>
       <Link href="/collections">Collections</Link>
@@ -508,8 +501,8 @@ function Home() {
         const frames = gsap.utils.toArray<HTMLElement>(".photo-stack .gallery-card");
         const flow = gsap.timeline({
           scrollTrigger: {
-            trigger: ".photo-stack", start: "top 100%", end: "top 60%",
-            scrub: 0.65, invalidateOnRefresh: true,
+            trigger: ".photo-stack", start: "top 82%",
+            toggleActions: "play none none reverse",
           },
         });
         frames.forEach((frame, i) => {
@@ -519,11 +512,11 @@ function Home() {
             transformOrigin: "50% 85%",
           }, {
             x: 0, xPercent: (1 - i) * 12, y: -18, rotation: (i - 1) * -3,
-            rotationX: 0, scale: 1.025, duration: 0.8, ease: "power2.out",
-          }, i * 0.09).to(frame, {
+            rotationX: 0, scale: 1.025, duration: 1.25, ease: "sine.inOut",
+          }, i * 0.14).to(frame, {
             x: 0, xPercent: 0, y: 0, rotation: 0, scale: 1,
-            duration: 0.5, ease: "sine.inOut",
-          }, 0.8 + i * 0.09);
+            duration: 0.7, ease: "back.out(1.4)",
+          }, 1.25 + i * 0.14);
         });
       });
     }, root);

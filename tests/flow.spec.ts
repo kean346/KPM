@@ -154,6 +154,7 @@ test("homepage motion survives navigation and reduced motion stays readable", as
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
+  await expect(page.getByRole("button", { name: /play background|pause background/i })).toHaveCount(0);
   const video = page.locator(".cinema-background video.active");
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentSrc)).toMatch(/desktop-hd\.mp4$/);
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
@@ -177,6 +178,7 @@ test("phone loads a single lightweight film and frames settle side by side", asy
   const media: string[] = [];
   page.on("request", request => { if (request.url().endsWith(".mp4")) media.push(request.url()); });
   await page.goto("/");
+  await expect(page.getByRole("button", { name: /play background|pause background/i })).toHaveCount(0);
   const video = page.locator(".cinema-background video.active");
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
   expect(media.every(url => url.endsWith("-phone.mp4"))).toBe(true);

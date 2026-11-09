@@ -11,6 +11,7 @@ const display = localFont({
   ],
   variable: "--font-display",
   display: "swap",
+  preload: false,
 });
 const sans = localFont({
   src: [
@@ -21,6 +22,7 @@ const sans = localFont({
   ],
   variable: "--font-sans",
   display: "swap",
+  preload: false,
 });
 const siteOrigin =
   process.env.NEXT_PUBLIC_SITE_URL ||
