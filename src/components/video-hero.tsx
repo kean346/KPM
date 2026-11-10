@@ -27,21 +27,12 @@ export default function VideoHero() {
   const root = useRef<HTMLElement>(null),
     videos = useRef<(HTMLVideoElement | null)[]>([]);
   const [active, setActive] = useState(0),
-    [reduced, setReduced] = useState(false),
     [visible, setVisible] = useState(true),
     [inView, setInView] = useState(true),
     [playing, setPlaying] = useState(false),
-    [failed, setFailed] = useState<number[]>([]),
-    [motionReady, setMotionReady] = useState(false);
-  const running = motionReady && !reduced && visible && inView;
+    [failed, setFailed] = useState<number[]>([]);
+  const running = visible && inView;
   useEffect(() => {
-    const query = matchMedia("(prefers-reduced-motion: reduce)");
-    const change = () => {
-      setReduced(query.matches);
-      setMotionReady(true);
-    };
-    change();
-    query.addEventListener("change", change);
     const visibility = () => setVisible(!document.hidden);
     document.addEventListener("visibilitychange", visibility);
     const observer = new IntersectionObserver(
@@ -50,7 +41,6 @@ export default function VideoHero() {
     );
     if (root.current) observer.observe(root.current);
     return () => {
-      query.removeEventListener("change", change);
       document.removeEventListener("visibilitychange", visibility);
       observer.disconnect();
     };
@@ -59,6 +49,8 @@ export default function VideoHero() {
     let cancelled = false;
     const video = videos.current[active];
     if (running && video) {
+      video.muted = true;
+      video.defaultMuted = true;
       void video
         .play()
         .then(() => {
@@ -97,6 +89,8 @@ export default function VideoHero() {
       pending = true;
       try {
         if (video.readyState >= 1) video.currentTime = 0;
+        video.muted = true;
+        video.defaultMuted = true;
         await video.play();
         if (!cancelled) {
           setActive(next);
@@ -114,6 +108,20 @@ export default function VideoHero() {
       clearInterval(timer);
     };
   }, [active, running, failed]);
+  useEffect(() => {
+    const resume = () => {
+      const video = videos.current[active];
+      if (!running || !video || !video.paused) return;
+      video.muted = true;
+      void video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    };
+    window.addEventListener("pointerdown", resume, { passive: true });
+    window.addEventListener("online", resume);
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("online", resume);
+    };
+  }, [active, running]);
   return (
     <section
       ref={root}
@@ -136,6 +144,14 @@ export default function VideoHero() {
             playsInline
             loop
             tabIndex={-1}
+            onCanPlay={(event) => {
+              const video = event.currentTarget;
+              if (i === active && running) {
+                video.muted = true;
+                video.defaultMuted = true;
+                void video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+              }
+            }}
             onError={() =>
               setFailed((prev) => (prev.includes(i) ? prev : [...prev, i]))
             }
@@ -212,7 +228,7 @@ export default function VideoHero() {
             Visual inspiration · Explore your experience below
           </span>
         )}
-        {!playing && !reduced && (
+        {!playing && (
           <span className="sr-only">
             The film is loading. You can explore the studio while it loads.
           </span>

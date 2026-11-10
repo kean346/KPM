@@ -168,6 +168,7 @@ test("homepage motion survives navigation and reduced motion stays readable", as
   await page.locator(".collection-card-reveal").first().scrollIntoViewIfNeeded();
   await expect(page.locator(".collection-card-reveal").first()).toHaveCSS("opacity", "1");
   await page.emulateMedia({ reducedMotion: "reduce" });
+  // The hero is offscreen after scrolling to the collection cards.
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.paused)).toBe(true);
   await expect(card).toHaveCSS("opacity", "1");
 });
@@ -210,4 +211,17 @@ test("top Event Studio button works on desktop and phone", async ({ page }) => {
     await expect(page).toHaveURL(/\/studio$/);
     await expect(page.getByRole("button", { name: "Load Example", exact: true })).toBeVisible();
   }
+});
+
+test("desktop film keeps playing and rotates with system reduced motion enabled", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const video = page.locator(".cinema-background video.active");
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.videoWidth)).toBe(1920);
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0.2);
+  const firstSource = await video.evaluate((el: HTMLVideoElement) => el.currentSrc);
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentSrc), { timeout: 15000 }).not.toBe(firstSource);
+  await expect.poll(() => video.evaluate((el: HTMLVideoElement) => !el.paused && el.currentTime > 0)).toBe(true);
+  await expect(page.getByRole("button", { name: /play background|pause background/i })).toHaveCount(0);
 });
