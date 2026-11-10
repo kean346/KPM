@@ -2263,7 +2263,7 @@ dialog::backdrop {
   z-index: -2;
 }
 .cinema-background {
-  background: #141315 url("/videos/ivory-venue-preview.webp") center/cover no-repeat;
+  background: #141315 url("/videos/hanging-flowers-preview.webp") center/cover no-repeat;
 }
 .cinema-background video {
   position: absolute;
@@ -2715,7 +2715,7 @@ dialog::backdrop {
     padding: 10px 0;
   }
   .cinema-background {
-    background-image: url("/videos/ivory-venue-preview.webp");
+    background-image: url("/videos/hanging-flowers-preview.webp");
   }
 }
 
@@ -2747,4 +2747,16 @@ dialog::backdrop {
   70% { transform: translate(0, -12px) rotate(calc(var(--flow-angle) * .1)) scale(1.035); }
   86% { transform: translate(0, 5px) rotate(0deg) scale(.99); }
   100% { transform: none; }
+}
+
+@media (max-width: 760px) {
+  .site-nav .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-left: auto;
+    margin-right: 12px;
+    font-size: 11px;
+  }
 }

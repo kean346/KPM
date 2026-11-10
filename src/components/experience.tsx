@@ -302,7 +302,7 @@ export default function Experience() {
             </Link>
             <nav aria-label="Main navigation">{nav}</nav>
             <Link className="nav-cta" href="/studio">
-              Design your experience <ArrowUpRight size={16} />
+              Event Studio <ArrowUpRight size={16} />
             </Link>
             <button
               className="mobile-toggle"

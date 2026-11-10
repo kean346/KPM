@@ -199,3 +199,15 @@ test("phone loads a single lightweight film and frames settle side by side", asy
   await frames.first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
+
+test("top Event Studio button works on desktop and phone", async ({ page }) => {
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const entry = page.getByRole("banner").getByRole("link", { name: "Event Studio", exact: true });
+    await expect(entry).toBeVisible();
+    await entry.click();
+    await expect(page).toHaveURL(/\/studio$/);
+    await expect(page.getByRole("button", { name: "Load Example", exact: true })).toBeVisible();
+  }
+});

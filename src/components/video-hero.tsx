@@ -6,20 +6,20 @@ const scenes = [
   {
     title: "Romance in motion",
     mood: "For the moments that mean everything.",
-    src: "/videos/ivory-venue-desktop-hd.mp4",
-    poster: "/videos/ivory-venue-preview.webp",
+    src: "/videos/hanging-flowers-desktop-hd.mp4",
+    poster: "/videos/hanging-flowers-preview.webp",
   },
   {
     title: "Beautifully considered",
     mood: "Every detail tells your story.",
-    src: "/videos/roses-raindrops-desktop-hd.mp4",
-    poster: "/videos/roses-raindrops-preview.webp",
+    src: "/videos/bridal-bouquet-desktop-hd.mp4",
+    poster: "/videos/bridal-bouquet-preview.webp",
   },
   {
     title: "Extraordinary moments",
     mood: "A feeling. A setting. Unforgettably yours.",
-    src: "/videos/celebration-table-desktop-hd.mp4",
-    poster: "/videos/celebration-table-preview.webp",
+    src: "/videos/floral-arch-desktop-hd.mp4",
+    poster: "/videos/floral-arch-preview.webp",
   },
 ];
 const DURATION = 8000;

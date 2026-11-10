@@ -65,3 +65,12 @@ The supplied soft 1080p references have been replaced by original 3840×2160 Pex
 - roses-raindrops-4k.mp4: [Marek Ruczaj](https://www.pexels.com/video/raindrops-on-delicate-pink-roses-36496434/). Original 4K MP4, no enlargement or recompression. Matching JPEG poster is an extracted frame.
 
 - celebration-table-4k.mp4: [Marian Croitoru](https://www.pexels.com/video/elegant-outdoor-wedding-table-in-tuscan-villa-29956462/). Original 4K MP4, no enlargement or recompression. Matching JPEG poster is an extracted frame.
+
+## Current HD homepage footage
+Three new Pexels clips replace the prior hero selection. Both 1080p desktop and 720p phone versions retain HD resolution; six-second H.264 clips have fast-start metadata and no audio. Used under the Pexels License, as illustrative inspiration.
+
+- hanging-flowers-desktop-hd.mp4: [Naresh Babu](https://www.pexels.com/video/elegant-hanging-bouquet-of-roses-and-chrysanthemums-36145035/), [Pexels License](https://www.pexels.com/license/).
+
+- bridal-bouquet-desktop-hd.mp4: [Sini Ko](https://www.pexels.com/video/elegant-bridal-bouquet-with-white-roses-30081239/), [Pexels License](https://www.pexels.com/license/).
+
+- floral-arch-desktop-hd.mp4: [Caleb Oquendo](https://www.pexels.com/video/elegant-floral-arch-with-roses-and-orchids-34555825/), [Pexels License](https://www.pexels.com/license/).
